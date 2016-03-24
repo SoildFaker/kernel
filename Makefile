@@ -11,8 +11,8 @@ LD = ld
 ASM = as
 
 C_FLAGS = -c -Wall -m32 -ggdb -gstabs+ -nostdinc -fno-builtin -fno-stack-protector -I include
-LD_FLAGS = -T scripts/kernel.ld -m elf_i386 -nostdlib
-ASM_FLAGS = -o
+LD_FLAGS = 
+ASM_FLAGS = 
 
 all: $(S_OBJECTS) $(C_OBJECTS) link update_image
 
@@ -23,7 +23,7 @@ all: $(S_OBJECTS) $(C_OBJECTS) link update_image
 
 .s.o:
 	@echo compiling asm $< ...
-	$(ASM) $(ASM_FLAGS) $<
+	$(ASM) $(ASM_FLAGS) $< -o $@
 
 link:
 	@echo linking...
