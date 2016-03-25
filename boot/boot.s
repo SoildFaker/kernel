@@ -23,6 +23,7 @@ go:		mov		ax,cs
 loop0:	jmp		loop0
 msg1:	.ascii	"loading system ..."
 		.byte	13,10
+
 .org	510
 		.word	0xAA55
 
