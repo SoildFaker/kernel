@@ -7,14 +7,18 @@ S_SOURCES = $(shell find . -name "*.s")
 S_OBJECTS = $(patsubst %.s, %.o, $(S_SOURCES))
 
 CC = gcc
+LD86 = ld86
 LD = ld
+AS86 = as86
 ASM = as
 
-C_FLAGS = -c -Wall -m32 -ggdb -gstabs+ -nostdinc -fno-builtin -fno-stack-protector -I include
+C_FLAGS = -c -Wall -ggdb -gstabs+ -nostdinc -fno-builtin -fno-stack-protector -I include
+LD86_FLAGS = -0 -s -o
 LD_FLAGS = 
-ASM_FLAGS = 
+AS86_FLAGS = -0 -a -o
+ASM_FLAGS =
 
-all: $(S_OBJECTS) $(C_OBJECTS) link update_image
+all: create_bootloader update_image
 
 # The automatic variable `$<' is just the first prerequisite
 .c.o:
@@ -22,23 +26,27 @@ all: $(S_OBJECTS) $(C_OBJECTS) link update_image
 	$(CC) $(C_FLAGS) $< -o $@
 
 .s.o:
-	@echo compiling asm $< ...
-	$(ASM) $(ASM_FLAGS) $< -o $@
+	@echo compiling as86 $< ...
+	$(ASM) $(ASM_FLAGS) $<
 
 link:
-	@echo linking...
-	$(LD) $(LD_FLAGS) $(S_OBJECTS) $(C_OBJECTS) -o kernel
+	@echo create bootloader with ld86...
+	$(LD86) $(LD86_FLAGS) boot $(BOOT_OBJ)
+
+create_bootloader:
+	@echo compiling with as86 ...
+	$(AS86) $(AS86_FLAGS) ./boot/boot.o ./boot/boot.s
+	@echo create bootloader with ld86...
+	$(LD86) $(LD86_FLAGS) ./boot/boot ./boot/boot.o
 
 .PHONY:clean
 clean:
-	$(RM) $(S_OBJECTS) $(C_OBJECTS) kernel
+	$(RM) $(S_OBJECTS) $(C_OBJECTS) _kernel
 
 .PHONY:update_image
 update_image:
-	sudo mount hdc.img /mnt/kernel
-	sudo cp kernel /mnt/kernel/kernel
+	dd bs=32 if=./boot/boot of=./hdc.img skip=1
 	sleep 1
-	sudo umount /mnt/kernel
 
 .PHONY:debug
 debug:
