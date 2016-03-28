@@ -1,4 +1,4 @@
-int kernel_entry(void)
+int kern_entry(void)
 {
   return 0;
 }
