@@ -3,7 +3,7 @@
 
 C_SOURCES = $(shell find . -name "*.c")
 C_OBJECTS = $(patsubst %.c, %.o, $(C_SOURCES))
-S_SOURCES = $(shell find . -name "*.s")
+S_SOURCES = $(shell find . -name "*.s" -prune ./boot)
 S_OBJECTS = $(patsubst %.s, %.o, $(S_SOURCES))
 
 CC = gcc
@@ -18,7 +18,7 @@ LD_FLAGS =
 AS86_FLAGS = -0 -a -o
 ASM_FLAGS =
 
-all: create_bootloader update_image
+all: create_bootloader $(C_OBJECTS) $(S_OBJECTS) link update_image
 
 # The automatic variable `$<' is just the first prerequisite
 .c.o:
@@ -31,7 +31,7 @@ all: create_bootloader update_image
 
 link:
 	@echo create bootloader with ld86...
-	$(LD86) $(LD86_FLAGS) boot $(BOOT_OBJ)
+	$(LD) $(LD_FLAGS) $(C_OBJECTS) $(S_OBJECTS) -o _kernel
 
 create_bootloader:
 	@echo compiling with as86 ...
@@ -47,6 +47,7 @@ clean:
 update_image:
 	dd bs=32 if=./boot/boot of=./hdc.img skip=1
 	sleep 1
+	dd if=_kernel of=./hdc.img seek=1
 
 .PHONY:debug
 debug:
