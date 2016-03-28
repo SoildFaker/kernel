@@ -68,6 +68,8 @@ idt_48:		.word	0
 
 gdt_48:		.word	0x7ff
 			.word	0x7c00+gdt,0
+msg1:	.ascii "Loading..."
+		.byte 13,10
 
 .org 510
 	  .word 0xAA55
