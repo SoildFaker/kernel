@@ -19,6 +19,6 @@ hdc:
 
 dos:
 	sudo mount ./hdc.img /mnt/kernel
-	sudo cp ./boot/a.com /mnt/kernel
+	sudo cp ./boot/boot.bin /mnt/kernel
 	sudo umount /mnt/kernel
 	qemu-system-i386 -fda freedos.img -fdb hdc.img
