@@ -28,7 +28,7 @@ LABEL_BEGIN:
 	  xor	eax,eax
 	  mov	ax,cs
 	  shl	eax,4
-	  add	eax,LABEL_DESC_CODE32
+	  add	eax,LABEL_SEG_CODE32
 	  mov	word [LABEL_DESC_CODE32 + 2],ax
 	  shr	eax,16
 	  mov	byte [LABEL_DESC_CODE32 + 4],al
