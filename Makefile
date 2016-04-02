@@ -6,10 +6,12 @@ all: bootlaoder
 	
 
 bootlaoder:
-	$(ASM) boot/boot.s -o boot/boot.bin
-	dd if=./boot/boot.bin of=./hdc.img bs=512 count=1
+	cd ./boot && \
+	  $(ASM) boot.s -o boot.bin
+	dd if=./boot/boot.bin of=./hdc.img bs=512 count=1 conv=notrunc
 
-
+bochs:
+	bochs -f bochsrc
 
 qemu:
 	qemu-system-i386 -fda hdc.img
@@ -18,9 +20,11 @@ hdc:
 	dd if=/dev/zero of=./hdc.img bs=512 count=2880
 
 com:
-	sudo mount ./hdc.img /mnt/kernel
+	cd ./boot && \
+	  $(ASM) boot.s -o a.com
+	sudo mount ./floppy.img /mnt/kernel
 	sudo cp ./boot/a.com /mnt/kernel
 	sudo umount /mnt/kernel
 
 dos:
-	qemu-system-i386 -fda freedos.img -fdb hdc.img
+	qemu-system-i386 -fda freedos.img -fdb floppy.img

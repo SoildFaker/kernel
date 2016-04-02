@@ -1,4 +1,6 @@
 *.o
 *.img
 *.out
+*.com
+log_*
 freedos*
