@@ -28,3 +28,8 @@ com:
 
 dos:
 	qemu-system-i386 -fda freedos.img -fdb floppy.img
+
+debug:
+	qemu-system-i386 -S -s -fda freedos.img -fdb floppy.img -boot a &
+	sleep 1
+	cgdb -x tools/gdbinit
