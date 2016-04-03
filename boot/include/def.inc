@@ -4,6 +4,11 @@ DA_32			equ			4000h	; 32bits segment
 DA_DRW			equ			92h		; R/W segment
 DA_DRWA			equ			93h		; R/W/A Segment
 DA_C			equ			98h		; executable
+
+DA_LDT			equ			82h
+
+
+SA_TIL			equ			4
 ; Descriptor
 ; usage: Descriptor Base, Limit, Attr
 ;		 Base: dd
