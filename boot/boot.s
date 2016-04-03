@@ -9,8 +9,9 @@ LABEL_GDT:			Descriptor	0,			0,				0
 LABEL_DESC_NORMAL:	Descriptor	0,			0ffffh,			DA_DRW
 LABEL_DESC_CODE16:	Descriptor	0,			0ffffh,			DA_C
 LABEL_DESC_CODE32:	Descriptor	0,			Seg32Len -1,	DA_C + DA_32
-LABEL_DSEC_DATA:	Descriptor	0,			DataLen - 1,	DA_DRW
+LABEL_DESC_DATA:	Descriptor	0,			DataLen - 1,	DA_DRW
 LABEL_DESC_STACK:	Descriptor	0,			TopOfStack,		DA_DRWA + DA_32
+LABEL_DESC_LDT:		Descriptor	0,			LDTLen - 1,		DA_LDT
 LABEL_DESC_TEST:	Descriptor	0500000h,	0ffffh,			DA_DRW
 LABEL_DESC_VIDEO:	Descriptor	0B8000h,	0FFFFh,			DA_DRW
 
@@ -20,11 +21,23 @@ GdtPtr		dw		GdtLen - 1
 
 SelectorNormal		equ		LABEL_DESC_NORMAL - LABEL_GDT
 SelectorCode16		equ		LABEL_DESC_CODE16 - LABEL_GDT
-SelectorData		equ		LABEL_DSEC_DATA - LABEL_GDT
+SelectorData		equ		LABEL_DESC_DATA - LABEL_GDT
 SelectorStack		equ		LABEL_DESC_STACK - LABEL_GDT
 SelectorTest		equ		LABEL_DESC_TEST - LABEL_GDT
 SelectorCode32		equ		LABEL_DESC_CODE32 - LABEL_GDT
 SelectorVideo		equ		LABEL_DESC_VIDEO - LABEL_GDT
+SelectorLDT			equ		LABEL_DESC_LDT - LABEL_GDT
+
+[SECTION .ldt]
+ALIGN 32
+LABEL_LDT:
+LABEL_LDT_DESC_CODE_A	Descriptor	0,		CodeALen - 1,		DA_C + DA_32
+LABEL_LDT_DESC_CODE_B	Descriptor	0,		CodeBLen - 1,		DA_C + DA_32
+
+LDTLen				equ		$ - LABEL_LDT
+
+SelectorLDTCodeA	equ		LABEL_LDT_DESC_CODE_A - LABEL_LDT + SA_TIL
+SelectorLDTCodeB	equ		LABEL_LDT_DESC_CODE_B - LABEL_LDT + SA_TIL
 
 [SECTION .data1]
 ALIGN	32
@@ -55,42 +68,33 @@ LABEL_BEGIN:
 
 	  mov	[LABLE_GO_BACK_TO_REAL + 3],ax
 
-	  xor	eax,eax
-	  mov	ax,cs
-	  shl	eax,4
-	  add	eax,LABEL_SEG_CODE32
-	  mov	word [LABEL_DESC_CODE32 + 2],ax
-	  shr	eax,16
-	  mov	byte [LABEL_DESC_CODE32 + 4],al
-	  mov	byte [LABEL_DESC_CODE32 + 7],ah
+	  mov	ebx,LABEL_SEG_CODE32
+	  mov	ecx,LABEL_DESC_CODE32
+	  call	INIT_DESC
 
-	  xor	eax,eax
-	  mov	ax,ds
-	  shl	eax,4
-	  add	eax,LABEL_DATA
-	  mov	word [LABEL_DSEC_DATA + 2],ax
-	  shr	eax,16
-	  mov	byte [LABEL_DSEC_DATA + 4],al
-	  mov	byte [LABEL_DSEC_DATA + 7],ah
+	  mov	ebx,LABEL_LDT
+	  mov	ecx,LABEL_DESC_LDT
+	  call	INIT_DESC
 
-	  xor	eax,eax
-	  mov	ax,ss
-	  shl	eax,4
-	  add	eax,LABEL_STACK
-	  mov	word [LABEL_DESC_STACK + 2],ax
-	  shr	eax,16
-	  mov	byte [LABEL_DESC_STACK + 4],al
-	  mov	byte [LABEL_DESC_STACK + 7],ah
+	  mov	ebx,LABEL_CODE_A
+	  mov	ecx,LABEL_LDT_DESC_CODE_A
+	  call	INIT_DESC
+	  
+	  mov	ebx,LABEL_CODE_B
+	  mov	ecx,LABEL_LDT_DESC_CODE_B
+	  call	INIT_DESC
 
-	  xor	eax,eax
-	  mov	ax,cs
-	  shl	eax,4
-	  add	eax,LABEL_SEG_CODE16
-	  mov	word [LABEL_DESC_CODE16 + 2],ax
-	  shr	eax,16
-	  mov	byte [LABEL_DESC_CODE16 + 4],al
-	  mov	byte [LABEL_DESC_CODE16 + 7],ah
+	  mov	ebx,LABEL_DATA
+	  mov	ecx,LABEL_DESC_DATA
+	  call	INIT_DESC
 
+	  mov	ebx,LABEL_STACK
+	  mov	ecx,LABEL_DESC_STACK
+	  call	INIT_DESC
+
+	  mov	ebx,LABEL_SEG_CODE16
+	  mov	ecx,LABEL_DESC_CODE16
+	  call	INIT_DESC
 
 
 	  xor	eax,eax
@@ -112,6 +116,17 @@ LABEL_BEGIN:
 	  mov	cr0,eax
 
 	  jmp	dword SelectorCode32:0
+INIT_DESC:
+	  xor	eax,eax
+	  mov	ax,cs
+	  shl	eax,4
+	  add	eax,ebx
+	  mov	word [ecx + 2],ax
+	  shr	eax,16
+	  mov	byte [ecx + 4],al
+	  mov	byte [ecx + 7],ah
+	  ret
+
 LABEL_REAL_ENTRY:
 	  mov	ax,cs
 	  mov	ds,ax
@@ -141,14 +156,14 @@ LABEL_SEG_CODE32:
 
 	  mov	ax,SelectorStack
 	  mov	ss,ax
-
 	  mov	esp,TopOfStack
+
 
 	  mov	ah,0ch
 	  xor	edi,edi
 	  xor	esi,esi
 	  mov	esi,OffsetPMMessage
-	  mov	edi,(80 * 11 +79) * 2
+	  mov	edi,(80 * 11 + 0) * 2
 	  cld
 
 .1:
@@ -160,6 +175,10 @@ LABEL_SEG_CODE32:
 	  jmp	.1
 
 .2:
+	  mov	ax,SelectorLDT
+	  lldt	ax
+	  jmp	SelectorLDTCodeA:0
+	  
 	  call	DispReturn
 
 	  call	TestRead
@@ -264,4 +283,33 @@ LABLE_GO_BACK_TO_REAL:
 	  jmp	0:LABEL_REAL_ENTRY
 
 Code18Len	equ		$ - LABEL_SEG_CODE16
+[SECTION .la]
+ALIGN 32
+[BITS 32]
+LABEL_CODE_A:
+	  mov	ax,SelectorVideo
+	  mov	gs,ax
 
+	  mov	edi,(80 * 12 + 0) * 2
+	  mov	ah,0ch
+	  mov	al,'A'
+	  mov	[gs:edi],al
+
+	  jmp	SelectorLDTCodeB:0
+
+CodeALen		equ		$ - LABEL_CODE_A
+[SECTION .la]
+ALIGN 32
+[BITS 32]
+LABEL_CODE_B:
+	  mov	ax,SelectorVideo
+	  mov	gs,ax
+
+	  mov	edi,(80 * 12 + 1) * 2
+	  mov	ah,0ch
+	  mov	al,'B'
+	  mov	[gs:edi],al
+
+	  jmp	SelectorCode16:0
+
+CodeBLen		equ		$ - LABEL_CODE_B
