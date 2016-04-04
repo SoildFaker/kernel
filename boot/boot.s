@@ -9,11 +9,14 @@ LABEL_GDT:			Descriptor	0,			0,				0
 LABEL_DESC_NORMAL:	Descriptor	0,			0ffffh,			DA_DRW
 LABEL_DESC_CODE16:	Descriptor	0,			0ffffh,			DA_C
 LABEL_DESC_CODE32:	Descriptor	0,			Seg32Len -1,	DA_C + DA_32
-LABEL_DESC_DATA:	Descriptor	0,			DataLen - 1,	DA_DRW
+LABEL_DESC_DATA:	Descriptor	0,			DataLen - 1,	DA_DRW + DA_DPL1
 LABEL_DESC_STACK:	Descriptor	0,			TopOfStack,		DA_DRWA + DA_32
 LABEL_DESC_LDT:		Descriptor	0,			LDTLen - 1,		DA_LDT
 LABEL_DESC_TEST:	Descriptor	0500000h,	0ffffh,			DA_DRW
 LABEL_DESC_VIDEO:	Descriptor	0B8000h,	0FFFFh,			DA_DRW
+LABEL_DESC_CODE_DEST:	Descriptor 0,		SegCodeDestLen - 1,	DA_C + DA_32
+LABEL_CALL_GATE_TEST:	Gate	SelectorCodeDest,	0,		0,		DA_386CGate + DA_DPL0
+
 
 GdtLen		equ		$ - LABEL_GDT
 GdtPtr		dw		GdtLen - 1
@@ -21,12 +24,14 @@ GdtPtr		dw		GdtLen - 1
 
 SelectorNormal		equ		LABEL_DESC_NORMAL - LABEL_GDT
 SelectorCode16		equ		LABEL_DESC_CODE16 - LABEL_GDT
-SelectorData		equ		LABEL_DESC_DATA - LABEL_GDT
+SelectorData		equ		LABEL_DESC_DATA - LABEL_GDT + SA_RPL1
 SelectorStack		equ		LABEL_DESC_STACK - LABEL_GDT
 SelectorTest		equ		LABEL_DESC_TEST - LABEL_GDT
 SelectorCode32		equ		LABEL_DESC_CODE32 - LABEL_GDT
 SelectorVideo		equ		LABEL_DESC_VIDEO - LABEL_GDT
 SelectorLDT			equ		LABEL_DESC_LDT - LABEL_GDT
+SelectorCodeDest	equ		LABEL_DESC_CODE_DEST - LABEL_GDT 
+SelectorCallGateTest	equ		LABEL_CALL_GATE_TEST - LABEL_GDT
 
 [SECTION .ldt]
 ALIGN 32
@@ -38,6 +43,7 @@ LDTLen				equ		$ - LABEL_LDT
 
 SelectorLDTCodeA	equ		LABEL_LDT_DESC_CODE_A - LABEL_LDT + SA_TIL
 SelectorLDTCodeB	equ		LABEL_LDT_DESC_CODE_B - LABEL_LDT + SA_TIL
+
 
 [SECTION .data1]
 ALIGN	32
@@ -96,6 +102,9 @@ LABEL_BEGIN:
 	  mov	ecx,LABEL_DESC_CODE16
 	  call	INIT_DESC
 
+	  mov	ebx,LABEL_SEG_CODE_DEST
+	  mov	ecx,LABEL_DESC_CODE_DEST
+	  call	INIT_DESC
 
 	  xor	eax,eax
 	  mov	ax,ds
@@ -310,6 +319,22 @@ LABEL_CODE_B:
 	  mov	al,'B'
 	  mov	[gs:edi],al
 
+	  call	SelectorCallGateTest:0
+
 	  jmp	SelectorCode16:0
 
 CodeBLen		equ		$ - LABEL_CODE_B
+[SECTION .sdest]
+[BITS 32]
+LABEL_SEG_CODE_DEST:
+	  mov	ax,SelectorVideo
+	  mov	gs,ax
+
+	  mov	edi,(80 * 12 + 2) * 2
+	  mov	ah,0ch
+	  mov	al,'C'
+	  mov	[gs:edi],al
+
+	  retf
+
+SegCodeDestLen		equ		$ - LABEL_SEG_CODE_DEST
