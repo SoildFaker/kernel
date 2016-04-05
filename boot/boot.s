@@ -13,9 +13,11 @@ LABEL_DESC_DATA:	Descriptor	0,			DataLen - 1,	DA_DRW + DA_DPL1
 LABEL_DESC_STACK:	Descriptor	0,			TopOfStack,		DA_DRWA + DA_32
 LABEL_DESC_LDT:		Descriptor	0,			LDTLen - 1,		DA_LDT
 LABEL_DESC_TEST:	Descriptor	0500000h,	0ffffh,			DA_DRW
-LABEL_DESC_VIDEO:	Descriptor	0B8000h,	0FFFFh,			DA_DRW
+LABEL_DESC_VIDEO:	Descriptor	0B8000h,	0FFFFh,			DA_DRW + DA_DPL3
 LABEL_DESC_CODE_DEST:	Descriptor 0,		SegCodeDestLen - 1,	DA_C + DA_32
 LABEL_CALL_GATE_TEST:	Gate	SelectorCodeDest,	0,		0,		DA_386CGate + DA_DPL0
+LABEL_DESC_CODE_RING3:	Descriptor 0,		SegCodeRing3 - 1,	DA_C + DA_32 + DA_DPL3
+LABEL_DESC_STACK3:	Descriptor	0,			TopOfStack3,	DA_DRWA + DA_32 + DA_DPL3
 
 
 GdtLen		equ		$ - LABEL_GDT
@@ -32,6 +34,8 @@ SelectorVideo		equ		LABEL_DESC_VIDEO - LABEL_GDT
 SelectorLDT			equ		LABEL_DESC_LDT - LABEL_GDT
 SelectorCodeDest	equ		LABEL_DESC_CODE_DEST - LABEL_GDT 
 SelectorCallGateTest	equ		LABEL_CALL_GATE_TEST - LABEL_GDT
+SelectorCodeRing3	equ		LABEL_DESC_CODE_RING3 - LABEL_GDT + SA_RPL3
+SelectorStack3		equ		LABEL_DESC_STACK3 - LABEL_GDT + SA_RPL3
 
 [SECTION .ldt]
 ALIGN 32
@@ -62,6 +66,14 @@ ALIGN	32
 LABEL_STACK:
 	  times		512		db	0
 TopOfStack:	 equ	$ - LABEL_STACK - 1
+
+[SECTION .s3]
+ALIGN	32
+[BITS 32]
+LABEL_STACK3:
+	  times		512		db	0
+TopOfStack3:	 equ	$ - LABEL_STACK3 - 1
+
 
 [SECTION .s16]
 [BITS 16]
@@ -104,6 +116,14 @@ LABEL_BEGIN:
 
 	  mov	ebx,LABEL_SEG_CODE_DEST
 	  mov	ecx,LABEL_DESC_CODE_DEST
+	  call	INIT_DESC
+
+	  mov	ebx,LABEL_CODE_RING3
+	  mov	ecx,LABEL_DESC_CODE_RING3
+	  call	INIT_DESC
+
+	  mov	ebx,LABEL_STACK3
+	  mov	ecx,LABEL_DESC_STACK3
 	  call	INIT_DESC
 
 	  xor	eax,eax
@@ -186,6 +206,11 @@ LABEL_SEG_CODE32:
 .2:
 	  mov	ax,SelectorLDT
 	  lldt	ax
+	  push	SelectorStack3
+	  push	TopOfStack3
+	  push	SelectorCodeRing3
+	  push	0
+	  retf
 	  jmp	SelectorLDTCodeA:0
 	  
 	  call	DispReturn
@@ -335,6 +360,22 @@ LABEL_SEG_CODE_DEST:
 	  mov	al,'C'
 	  mov	[gs:edi],al
 
+
 	  retf
 
 SegCodeDestLen		equ		$ - LABEL_SEG_CODE_DEST
+
+[SECTION .ring3]
+ALIGN 32
+[BITS 32]
+LABEL_CODE_RING3:
+	  mov	ax,SelectorVideo
+	  mov	gs,ax
+
+	  mov	edi,(80 * 12 + 3) * 2
+	  mov	ah,0ch
+	  mov	al,'3'
+	  mov	[gs:edi],al
+
+	  jmp	$
+SegCodeRing3	equ		$ - LABEL_CODE_RING3
