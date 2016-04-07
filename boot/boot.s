@@ -15,9 +15,10 @@ LABEL_DESC_LDT:		Descriptor	0,			LDTLen - 1,		DA_LDT
 LABEL_DESC_TEST:	Descriptor	0500000h,	0ffffh,			DA_DRW
 LABEL_DESC_VIDEO:	Descriptor	0B8000h,	0FFFFh,			DA_DRW + DA_DPL3
 LABEL_DESC_CODE_DEST:	Descriptor 0,		SegCodeDestLen - 1,	DA_C + DA_32
-LABEL_CALL_GATE_TEST:	Gate	SelectorCodeDest,	0,		0,		DA_386CGate + DA_DPL0
+LABEL_CALL_GATE_TEST:	Gate	SelectorCodeDest,	0,		0,		DA_386CGate + DA_DPL3
 LABEL_DESC_CODE_RING3:	Descriptor 0,		SegCodeRing3 - 1,	DA_C + DA_32 + DA_DPL3
 LABEL_DESC_STACK3:	Descriptor	0,			TopOfStack3,	DA_DRWA + DA_32 + DA_DPL3
+LABEL_DESC_TSS:		Descriptor	0,			TSSLen - 1,		DA_386TSS
 
 
 GdtLen		equ		$ - LABEL_GDT
@@ -33,9 +34,10 @@ SelectorCode32		equ		LABEL_DESC_CODE32 - LABEL_GDT
 SelectorVideo		equ		LABEL_DESC_VIDEO - LABEL_GDT
 SelectorLDT			equ		LABEL_DESC_LDT - LABEL_GDT
 SelectorCodeDest	equ		LABEL_DESC_CODE_DEST - LABEL_GDT 
-SelectorCallGateTest	equ		LABEL_CALL_GATE_TEST - LABEL_GDT
+SelectorCallGateTest	equ		LABEL_CALL_GATE_TEST - LABEL_GDT + SA_RPL3
 SelectorCodeRing3	equ		LABEL_DESC_CODE_RING3 - LABEL_GDT + SA_RPL3
 SelectorStack3		equ		LABEL_DESC_STACK3 - LABEL_GDT + SA_RPL3
+SelectorTSS			equ		LABEL_DESC_TSS - LABEL_GDT
 
 [SECTION .ldt]
 ALIGN 32
@@ -59,6 +61,40 @@ OffsetPMMessage			equ		PMMessage - $$
 StrTest:				db		"ABCDEFGHIJKLMNOPQRSTUVWXYZ", 0
 OffsetStrTest			equ		StrTest - $$
 DataLen					equ		$ - LABEL_DATA
+
+[SECTION .tss]
+ALIGN 32
+[BITS 32]
+LABEL_TSS:
+	  dd	0				; back
+	  dd	TopOfStack		; 0 ring stack
+	  dd	SelectorStack	; 
+	  dd	0				; 1 ring stack
+	  dd	0				;
+	  dd	0				; 2 ring stack
+	  dd	0				;
+	  dd	0				; CR3
+	  dd	0				; EIP
+	  dd	0				; EFLAGS
+	  dd	0				; EAX
+	  dd	0				; ECX
+	  dd	0				; EDX
+	  dd	0				; EBX
+	  dd	0				; ESP
+	  dd	0				; EBP
+	  dd	0				; ESI
+	  dd	0				; EDI
+	  dd	0				; ES
+	  dd	0				; CS
+	  dd	0				; SS
+	  dd	0				; DS
+	  dd	0				; FS
+	  dd	0				; GS
+	  dd	0				; LDT
+	  dw	0				; 
+	  dw	$ - LABEL_TSS + 2 ; I/O Addr
+	  db	0ffh			;
+TSSLen		equ		$ - LABEL_TSS
 
 [SECTION .gs]
 ALIGN	32
@@ -124,6 +160,10 @@ LABEL_BEGIN:
 
 	  mov	ebx,LABEL_STACK3
 	  mov	ecx,LABEL_DESC_STACK3
+	  call	INIT_DESC
+
+	  mov	ebx,LABEL_TSS
+	  mov	ecx,LABEL_DESC_TSS
 	  call	INIT_DESC
 
 	  xor	eax,eax
@@ -206,14 +246,18 @@ LABEL_SEG_CODE32:
 .2:
 	  mov	ax,SelectorLDT
 	  lldt	ax
+	  
+	  call	DispReturn
+
+	  mov	ax,SelectorTSS
+	  ltr	ax
+
 	  push	SelectorStack3
 	  push	TopOfStack3
 	  push	SelectorCodeRing3
 	  push	0
 	  retf
 	  jmp	SelectorLDTCodeA:0
-	  
-	  call	DispReturn
 
 	  call	TestRead
 	  call	TestWrite
@@ -376,6 +420,7 @@ LABEL_CODE_RING3:
 	  mov	ah,0ch
 	  mov	al,'3'
 	  mov	[gs:edi],al
+	  call	SelectorCallGateTest:0
 
 	  jmp	$
 SegCodeRing3	equ		$ - LABEL_CODE_RING3
