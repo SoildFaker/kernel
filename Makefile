@@ -21,7 +21,7 @@ hdc:
 
 com:
 	cd ./boot && \
-	  $(ASM) boot.s -o a.com
+	  $(ASM) test.asm -o a.com
 	sudo mount ./floppy.img /mnt/kernel
 	sudo cp ./boot/a.com /mnt/kernel
 	sudo umount /mnt/kernel
