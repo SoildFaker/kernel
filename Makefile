@@ -3,7 +3,6 @@ ASM = nasm
 all: bootlaoder
 .s.o:
 	$(ASM) $< -o
-	
 
 bootlaoder:
 	cd ./boot && \
