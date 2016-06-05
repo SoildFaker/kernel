@@ -416,7 +416,11 @@ LABEL_CODE_RING3:
 
 	  mov	edi,(80 * 12 + 3) * 2
 	  mov	ah,0ch
+<<<<<<< ours
 	  mov	al,'r'
+=======
+	  mov	al,'3'
+>>>>>>> theirs
 	  mov	[gs:edi],al
 	  call	SelectorCallGateTest:0
 
