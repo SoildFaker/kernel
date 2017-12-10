@@ -2,7 +2,7 @@
 #include <boot/gdt.h>
 
 void set_gdt(
-  struct gdt *entry,
+  struct GDT *entry,
   u32 base,
   u32 limit,
   u8  access,
@@ -17,4 +17,10 @@ void set_gdt(
   entry->granularity = (limit >> 16) & 0xff;
   entry->granularity |= granularity & 0xf0;
   entry->access = access;
+}
+
+void load_gdt(struct GDT_PTR ptr){
+  asm volatile(
+    "lgdt (%0)"::"r"(&ptr)
+  );
 }
