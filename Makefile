@@ -1,9 +1,32 @@
 ASM = as
+CC = gcc
+LD = ld
 
-all: cbootloader dd test
+INCLUDE = -I./
+BINDIR = bin
+SRCDIR = boot
+SRC = $(wildcard $(SRCDIR)/*.c)
+OBJ := $(addprefix $(BINDIR)/,$(notdir $(SRC:.c=.o)))
+LSCRIPT = boot/boot.ld
 
-.s.o:
-	$(ASM) $< -o
+GCFLAGS = -c -g -Os -m16 -ffreestanding -Wall -Werror 
+GCFLAGS += $(INCLUDE) -fno-stack-protector
+LDFLAGS = -static -T$(LSCRIPT) -melf_i386 -nostdlib --nmagic
+
+all:$(BINDIR)/boot.bin dd test
+
+clean:
+	rm -rf $(BINDIR)
+
+$(BINDIR)/boot.bin: $(BINDIR)/boot.elf
+	objcopy -O binary $(BINDIR)/boot.elf $(BINDIR)/boot.bin
+
+$(BINDIR)/boot.elf: $(OBJ)
+	$(LD) $(LDFLAGS) -o $(BINDIR)/boot.elf $(OBJ)
+
+$(BINDIR)/%.o: $(SRCDIR)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(GCFLAGS) -c $< -o $@
 
 bootloader:
 	cd ./boot && \
@@ -11,7 +34,7 @@ bootloader:
 	ld -Ttext 0x7c00 --oformat=binary boot.o -o boot.bin
 
 dd:
-	dd if=./boot/boot.bin of=./floppy.img bs=512 count=1 conv=notrunc
+	dd if=./$(BINDIR)/boot.bin of=./floppy.img bs=512 count=1 conv=notrunc
 
 cbootloader:
 	cd ./boot && \
