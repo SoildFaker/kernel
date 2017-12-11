@@ -5,47 +5,39 @@
 .global _start
 
 _start:
-  jmp _boot
+  jmp boot
 
-_boot:
-  movw $0x07c0, %ax
+boot:
+  jmp go
+go: movw %cs, %ax # make segment register point to 0x07c0
   movw %ax, %ds
-  lgdt gdt_prt
+  movw %ax, %ss
+  movw $0x0400, %sp       # stack pointer prepare for copy kernel
 
-  cli
-  in   $0x92, %al
-  or   $0x2, %al
-  out  %al, $0x92
-  movl %cr0, %eax
-  or   $1, %eax
-  movl %eax, %cr0
+load_system:
+  movw $0x0000, %dx       # bios int 0x13 read data from disk
+  movw $0x0002, %cx       # second sector
+  movw $0x1000, %ax       # move to 0x1000 in menory
+  movw %ax, %es           # ES:BX point to buffer
+  xor  %bx, %bx
+  movw $0x0200+17, %ax   # AH function index AL number of sector
+  int  $0x13
+  jnc  ok_load
+die:  jmp  die
 
-print:
-  jmp .
+ok_load:
+  cli                     # interrupt closed
+  movw $0x1000, %ax       # where to copy
+  movw %ax, %ds
+  xor  %ax, %ax
+  movw %ax, %es
+  movw $0x1000, %cx       # copy 0x1000 times
+  subw %si, %si
+  subw %di, %di
+  rep  movsw
 
-msg: .asciz "Hello, World\r\n"
-msg2: .asciz "Protect Mode Now...\r\n"
+  jmp  $0x0000, $0x0000
 
-gdt:
-  .word 0,0,0,0 # descriptor 0 deprecated
-
-  # descriptor 1
-  .word 0x07ff  # section limit
-  .word 0x0000  # section base
-  .word 0x9a00  # code scetion read/execute
-  .word 0x00c0
-
-  .word 0xb800  # section limit
-  .word 0x0000  # section base
-  .word 0x9a00  # data scetion read/write
-  .word 0x00c0
-
-gdt_len:
-  .set GDT_SIZE, . - gdt
-
-gdt_prt: 
-  .word GDT_SIZE - 1
-  .long 0
 
 .org 510
   .word 0xaa55
