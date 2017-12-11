@@ -1,4 +1,4 @@
-ASM = as
+AS = as
 CC = gcc
 LD = ld
 
@@ -6,41 +6,40 @@ INCLUDE = -I./
 BINDIR = bin
 SRCDIR = boot
 SRC = $(wildcard $(SRCDIR)/*.c)
-OBJ := $(addprefix $(BINDIR)/,$(notdir $(SRC:.c=.o)))
-LSCRIPT = boot/boot.ld
+ASM = $(wildcard $(SRCDIR)/*.s)
 
-GCFLAGS = -c -g -Os -m16 -ffreestanding -Wall -Werror 
+OBJ := $(addprefix $(BINDIR)/,$(notdir $(SRC:.c=.o)))
+OBJ += $(addprefix $(BINDIR)/,$(notdir $(ASM:.s=.o)))
+LSCRIPT = link.ld
+
+GCFLAGS = -c -g -Os -m16 -ffreestanding 
 GCFLAGS += $(INCLUDE) -fno-stack-protector
+ASFLAGS = 
 LDFLAGS = -static -T$(LSCRIPT) -melf_i386 -nostdlib --nmagic
 
-all:$(BINDIR)/boot.bin dd test
+all:$(BINDIR)/boot.bin $(BINDIR)/kernel.bin dd test
 
 clean:
 	rm -rf $(BINDIR)
 
-$(BINDIR)/boot.bin: $(BINDIR)/boot.elf
-	objcopy -O binary $(BINDIR)/boot.elf $(BINDIR)/boot.bin
+$(BINDIR)/kernel.bin: $(OBJ)
+	$(LD) $(LDFLAGS) -o $(BINDIR)/kernel.elf $(BINDIR)/head.o && \
+	objcopy -O binary $(BINDIR)/kernel.elf $(BINDIR)/kernel.bin
 
-$(BINDIR)/boot.elf: $(OBJ)
-	$(LD) $(LDFLAGS) -o $(BINDIR)/boot.elf $(OBJ)
+$(BINDIR)/boot.bin: $(OBJ)
+	$(LD) -Ttext 0x7c00 --oformat=binary $(BINDIR)/boot.o -o $(BINDIR)/boot.bin
 
 $(BINDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(GCFLAGS) -c $< -o $@
 
-bootloader:
-	cd ./boot && \
-	$(ASM) boot.s -o boot.o && \
-	ld -Ttext 0x7c00 --oformat=binary boot.o -o boot.bin
+$(BINDIR)/%.o: $(SRCDIR)/%.s
+	@mkdir -p $(dir $@)
+	$(AS) $< -o $@
 
 dd:
-	dd if=./$(BINDIR)/boot.bin of=./floppy.img bs=512 count=1 conv=notrunc
-
-cbootloader:
-	cd ./boot && \
-	gcc -c -g -Os -m16 -ffreestanding -Wall -Werror boot.c -o boot.o && \
-	ld -static -Tboot.ld -melf_i386 -nostdlib --nmagic -o boot.elf boot.o && \
-	objcopy -O binary boot.elf boot.bin
+	dd if=./$(BINDIR)/boot.bin of=./floppy.img obs=512 count=1 conv=notrunc
+	dd if=./$(BINDIR)/kernel.bin of=./floppy.img obs=512 seek=1 conv=notrunc
 
 test:
 	bochs -f bochsrc
