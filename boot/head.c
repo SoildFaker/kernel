@@ -3,7 +3,7 @@
 /*#include <boot/descriptor_tables.h>*/
 
 asm(".code16gcc\n");
-asm("jmp $0x0000, $main\n");
+asm("jmp $0x0000, $kmain\n");
 
 void printStr(const char* pStr) {
   while(*pStr){
@@ -14,7 +14,19 @@ void printStr(const char* pStr) {
   }
 }
 
-void main(){
+// note this example will always write to the top
+// line of the screen
+void write_string( int colour, const char *string )
+{
+    volatile char *video = (volatile char*)0xB8000;
+    while( *string != 0 )
+    {
+        *video++ = *string++;
+        *video++ = colour;
+    }
+}
+
+void kmain(){
   printStr("OK LOADED");
   for(;;);
 }
