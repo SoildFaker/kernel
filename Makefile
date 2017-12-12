@@ -12,10 +12,12 @@ OBJ := $(addprefix $(BINDIR)/,$(notdir $(SRC:.c=.o)))
 OBJ += $(addprefix $(BINDIR)/,$(notdir $(ASM:.s=.o)))
 LSCRIPT = link.ld
 
-GCFLAGS = -c -g -Os -m16 -ffreestanding -Wall -Werror
+GCFLAGS = -c -g -Os -m16 -ffreestanding -Wall -Werror -Werror=unused-function
 GCFLAGS += $(INCLUDE) -fno-stack-protector
 ASFLAGS = 
 LDFLAGS = -static -T$(LSCRIPT) -melf_i386 -nostdlib --nmagic
+KERNELO = $(BINDIR)/desc.o $(BINDIR)/descriptor_tables.o
+KERNELO += $(BINDIR)/head.o
 
 all:$(BINDIR)/boot.bin $(BINDIR)/kernel.bin dd test
 
@@ -23,7 +25,7 @@ clean:
 	rm -rf $(BINDIR)
 
 $(BINDIR)/kernel.bin: $(OBJ)
-	$(LD) $(LDFLAGS) -o $(BINDIR)/kernel.elf $(BINDIR)/head.o && \
+	$(LD) $(LDFLAGS) -o $(BINDIR)/kernel.elf $(KERNELO) && \
 	objcopy -O binary $(BINDIR)/kernel.elf $(BINDIR)/kernel.bin
 
 $(BINDIR)/boot.bin: $(OBJ)
