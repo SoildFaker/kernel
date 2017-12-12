@@ -12,7 +12,7 @@ OBJ := $(addprefix $(BINDIR)/,$(notdir $(SRC:.c=.o)))
 OBJ += $(addprefix $(BINDIR)/,$(notdir $(ASM:.s=.o)))
 LSCRIPT = link.ld
 
-GCFLAGS = -c -g -Os -m16 -ffreestanding 
+GCFLAGS = -c -g -Os -m16 -ffreestanding -Wall -Werror
 GCFLAGS += $(INCLUDE) -fno-stack-protector
 ASFLAGS = 
 LDFLAGS = -static -T$(LSCRIPT) -melf_i386 -nostdlib --nmagic
