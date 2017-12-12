@@ -1,6 +1,6 @@
-/*#include <tinx/types.h>*/
-/*#include <boot/common.h>*/
-/*#include <boot/descriptor_tables.h>*/
+#include <tinx/types.h>
+#include <boot/common.h>
+#include <boot/descriptor_tables.h>
 
 asm(".code16gcc\n");
 asm("jmp $0x0000, $kmain\n");
@@ -27,6 +27,9 @@ void write_string( int colour, const char *string )
 }
 
 void kmain(){
-  printStr("OK LOADED");
+  init_descriptor_tables();
+  switch_protect();
+  
+  write_string(32, "OK");
   for(;;);
 }
