@@ -4,15 +4,6 @@
 gdt_flush:
   movl 4(%esp), %eax    # give a parameter (gdt_table entry address)
   lgdt (%eax)           # load the new gdt pointer
-  movw $0x10, %ax       # 0x10 is the offset in the GDT to our data segment
-  movw %ax, %ds
-  movw %ax, %es
-  movw %ax, %fs
-  movw %ax, %gs
-  movw %ax, %ss
-
-  jmp  flush
-flush:
   ret
 
 .global idt_flush
@@ -25,7 +16,13 @@ idt_flush:
 .globl switch_protect
 
 switch_protect:
-  movw $0x0001, %ax
-  lmsw %ax 
+  movl %cr0, %eax
+  or   $0x01, %al
+  movl %eax, %cr0
+  jmp  $0x8, $pm
+
+.code32
+pm:
+  #lmsw %ax 
   ret
   

@@ -41,7 +41,3 @@ extern void gdt_flush(u32);
 extern void idt_flush(u32);
 
 void init_descriptor_tables();
-void init_idt();
-void idt_set_gate(u8,u32,u16,u8);
-void gdt_set_gate(int, u32, u32, u8, u8);
-void init_gdt();

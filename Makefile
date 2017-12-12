@@ -4,29 +4,30 @@ LD = ld
 
 INCLUDE = -I./
 BINDIR = bin
-SRCDIR = boot
+SRCDIR = tinx
+BOOTDIR = boot
 SRC = $(wildcard $(SRCDIR)/*.c)
-ASM = $(wildcard $(SRCDIR)/*.s)
+ASM = $(wildcard $(SRCDIR)/*.s) $(wildcard $(BOOTDIR)/*.s)
 
 OBJ := $(addprefix $(BINDIR)/,$(notdir $(SRC:.c=.o)))
 OBJ += $(addprefix $(BINDIR)/,$(notdir $(ASM:.s=.o)))
 LSCRIPT = link.ld
 
-GCFLAGS = -c -g -Os -m16 -ffreestanding -Wall -Werror -Werror=unused-function
+GCFLAGS = -c -g -Os -m16 -ffreestanding -Wall -Werror -fno-pie
 GCFLAGS += $(INCLUDE) -fno-stack-protector
-ASFLAGS = 
-LDFLAGS = -static -T$(LSCRIPT) -melf_i386 -nostdlib --nmagic
-KERNELO = $(BINDIR)/desc.o $(BINDIR)/descriptor_tables.o
-KERNELO += $(BINDIR)/head.o
+ASFLAGS = --32
+LDFLAGS = -static -melf_i386 -nostdlib --nmagic --oformat=binary
+KERNELO = $(BINDIR)/head.o
+KERNELO += $(BINDIR)/desc.o $(BINDIR)/descriptor_tables.o
 
-all:$(BINDIR)/boot.bin $(BINDIR)/kernel.bin dd test
+all:clean $(BINDIR)/boot.bin $(BINDIR)/kernel.bin dd test
 
 clean:
 	rm -rf $(BINDIR)
 
 $(BINDIR)/kernel.bin: $(OBJ)
-	$(LD) $(LDFLAGS) -o $(BINDIR)/kernel.elf $(KERNELO) && \
-	objcopy -O binary $(BINDIR)/kernel.elf $(BINDIR)/kernel.bin
+	$(LD) -T$(LSCRIPT) $(LDFLAGS) $(KERNELO) -o $(BINDIR)/kernel.bin
+	#objcopy -O binary $(BINDIR)/kernel.elf $(BINDIR)/kernel.bin
 
 $(BINDIR)/boot.bin: $(OBJ)
 	$(LD) -Ttext 0x7c00 --oformat=binary $(BINDIR)/boot.o -o $(BINDIR)/boot.bin
@@ -36,6 +37,10 @@ $(BINDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(GCFLAGS) -c $< -o $@
 
 $(BINDIR)/%.o: $(SRCDIR)/%.s
+	@mkdir -p $(dir $@)
+	$(AS) $(ASFLAGS) $< -o $@
+
+$(BINDIR)/%.o: $(BOOTDIR)/%.s
 	@mkdir -p $(dir $@)
 	$(AS) $< -o $@
 

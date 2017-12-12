@@ -3,7 +3,7 @@
 /*            Original file taken from Bran's Kernel Development */
 /*            tutorials: http://www.osdever.net/bkerndev/index.php. */
 
-ENTRY(kmain)
+ENTRY(start)
 SECTIONS
 {
 
@@ -11,12 +11,12 @@ SECTIONS
   .text :
   {
     *(.text)
+    *(.rodata*)
   }
 
   .data :
   {
     *(.data)
-    *(.rodata)
   }
 
   .bss :
