@@ -1,11 +1,14 @@
 #include <types.h>
 #include <common.h>
-#include <descriptor_tables.h>
+#include <descriptor.h>
 #include <tools.h>
 
 void kmain(){
+  flush_screen();
   init_descriptor_tables();
   
-  write_string(COLOR_BLACK, COLOR_GREEN, "OK------LOADED");
+  kprintf("KERNEL LOADED\n");
+  kprintf("KERNEL LOADED\n");
+  kprint_hex(0x00fea788);
   for(;;);
 }

@@ -20,6 +20,8 @@
 #define COLOR_LIGHT_BROWN  14
 #define COLOR_WHITE  15
 
-
-void write_string(u8, u8, const char*);
+void flush_screen();
+void flush_line(u8);
+void kprint_hex(u32 hex);
+void kprintf(const char *string);
 #endif

@@ -4,11 +4,17 @@ start:
   lgdt gdt_ptr           # load the new gdt pointer
   lidt idt_ptr
 
-  # prepare to protect move
+# prepare to protect move
   movl %cr0, %eax
   or   $0x01, %al
   movl %eax, %cr0
 
+# enable A20 line 
+  in  $0x92, %al
+  or  $0x02, %al
+  out %al, $0x92
+
+# load segment descriptor
   movl $0x10, %eax
   movw %ax, %ds
   movw %ax, %es

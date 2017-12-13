@@ -1,5 +1,29 @@
 #include <types.h>
 
+#define G_32    0xcf
+#define G_16    0x0f
+
+#define A_DPL0    0x00
+#define A_DPL1    0x20
+#define A_DPL2    0x40
+#define A_DPL3    0x60
+
+#define A_LDT         0x82
+#define A_TaskGate    0x85
+#define A_386TSS      0x89
+#define A_386CGATE    0x8c
+#define A_386IGATE    0x8e
+#define A_386TGATE    0x8f
+
+#define A_DR    0x90
+#define A_DRW   0x92
+#define A_DRWA  0x93
+#define A_C     0x98
+#define A_CR    0x9a
+#define A_CCO   0x9c
+#define A_CCOR  0x9e
+
+
 struct gdt_entry_struct{
   u16 segment_limit;
   u16 base_low;
