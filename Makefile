@@ -13,12 +13,12 @@ OBJ := $(addprefix $(BINDIR)/,$(notdir $(SRC:.c=.o)))
 OBJ += $(addprefix $(BINDIR)/,$(notdir $(ASM:.s=.o)))
 LSCRIPT = link.ld
 
-GCFLAGS = -c -g -Os -m16 -ffreestanding -Wall -Werror -fno-pie
+GCFLAGS = -c -g -Os -m32 -ffreestanding -Wall -Werror -fno-pie
 GCFLAGS += $(INCLUDE) -fno-stack-protector
 ASFLAGS = --32
 LDFLAGS = -static -melf_i386 -nostdlib --nmagic --oformat=binary
 KERNELO = $(BINDIR)/head.o
-KERNELO += $(BINDIR)/desc.o $(BINDIR)/descriptor_tables.o
+KERNELO += $(BINDIR)/kernel.o $(BINDIR)/desc.o $(BINDIR)/descriptor_tables.o
 
 all:clean $(BINDIR)/boot.bin $(BINDIR)/kernel.bin dd test
 
