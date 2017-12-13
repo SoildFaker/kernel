@@ -1,4 +1,4 @@
-.code16
+.code32
 .global gdt_flush
 
 gdt_flush:
@@ -12,17 +12,3 @@ idt_flush:
  movl 4(%esp), %eax
  lidt (%eax)
  ret
-
-.globl switch_protect
-
-switch_protect:
-  movl %cr0, %eax
-  or   $0x01, %al
-  movl %eax, %cr0
-  jmp  $0x8, $pm
-
-.code32
-pm:
-  #lmsw %ax 
-  ret
-  

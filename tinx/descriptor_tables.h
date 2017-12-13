@@ -36,7 +36,6 @@ struct idt_ptr_struct
 typedef struct idt_ptr_struct idt_ptr_t;
 
 // These extern directives let us access the addresses of our ASM ISR handlers.
-extern void switch_protect();
 extern void gdt_flush(u32);
 extern void idt_flush(u32);
 

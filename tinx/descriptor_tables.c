@@ -2,8 +2,6 @@
 #include <tinx/common.h>
 #include <tinx/descriptor_tables.h>
 
-asm(".code16gcc\n");
-
 static void gdt_set_gate(int, u32, u32, u8, u8);
 static void idt_set_gate(u8, u32, u16, u8);
 static void init_gdt();
