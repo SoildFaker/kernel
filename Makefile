@@ -2,51 +2,56 @@ AS = as
 CC = gcc
 LD = ld
 
-INCLUDE = -I./
-BINDIR = bin
-SRCDIR = tinx
-BOOTDIR = boot
-SRC = $(wildcard $(SRCDIR)/*.c)
-ASM = $(wildcard $(SRCDIR)/*.s) $(wildcard $(BOOTDIR)/*.s)
+INCLUDE = -I./include
 
-OBJ := $(addprefix $(BINDIR)/,$(notdir $(SRC:.c=.o)))
-OBJ += $(addprefix $(BINDIR)/,$(notdir $(ASM:.s=.o)))
+OUTDIR = bin
+KNLDIR = kernel
+BTLDDIR = boot
+
+KNLSRC = $(wildcard $(KNLDIR)/*.c)
+KNLASM = $(wildcard $(KNLDIR)/*.s)
+# We need head.o be placed ahead, so filter out here
+KNLASM := $(filter-out head.s, $(KNLASM))
+BTLDASM = $(wildcard $(BTLDDIR)/*.s)
+
+KNLOBJ := $(addprefix $(OUTDIR)/,$(notdir $(KNLSRC:.c=.o)))
+KNLOBJ += $(addprefix $(OUTDIR)/,$(notdir $(KNLASM:.s=.o)))
+BTLDOBJ = $(addprefix $(OUTDIR)/,$(notdir $(BTLDASM:.s=.o)))
+
 LSCRIPT = link.ld
 
 GCFLAGS = -c -g -Os -m32 -ffreestanding -Wall -Werror -fno-pie
 GCFLAGS += $(INCLUDE) -fno-stack-protector
 ASFLAGS = --32
 LDFLAGS = -static -melf_i386 -nostdlib --nmagic --oformat=binary
-KERNELO = $(BINDIR)/head.o
-KERNELO += $(BINDIR)/kernel.o $(BINDIR)/desc.o $(BINDIR)/descriptor_tables.o
 
-all:clean $(BINDIR)/boot.bin $(BINDIR)/kernel.bin dd test
+all:clean $(OUTDIR)/boot.bin $(OUTDIR)/kernel.bin dd test
 
 clean:
-	rm -rf $(BINDIR)
+	rm -rf $(OUTDIR)
 
-$(BINDIR)/kernel.bin: $(OBJ)
-	$(LD) -T$(LSCRIPT) $(LDFLAGS) $(KERNELO) -o $(BINDIR)/kernel.bin
-	#objcopy -O binary $(BINDIR)/kernel.elf $(BINDIR)/kernel.bin
+$(OUTDIR)/kernel.bin: $(KNLOBJ)
+	$(LD) -T$(LSCRIPT) $(LDFLAGS) $(OUTDIR)/head.o $(KNLOBJ) -o $(OUTDIR)/kernel.bin
+	#objcopy -O binary $(OUTDIR)/kernel.elf $(OUTDIR)/kernel.bin
 
-$(BINDIR)/boot.bin: $(OBJ)
-	$(LD) -Ttext 0x7c00 --oformat=binary $(BINDIR)/boot.o -o $(BINDIR)/boot.bin
+$(OUTDIR)/boot.bin: $(BTLDOBJ)
+	$(LD) -Ttext 0x7c00 --oformat=binary $(BTLDOBJ) -o $(OUTDIR)/boot.bin
 
-$(BINDIR)/%.o: $(SRCDIR)/%.c
+$(OUTDIR)/%.o: $(KNLDIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(GCFLAGS) -c $< -o $@
 
-$(BINDIR)/%.o: $(SRCDIR)/%.s
+$(OUTDIR)/%.o: $(KNLDIR)/%.s
 	@mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) $< -o $@
 
-$(BINDIR)/%.o: $(BOOTDIR)/%.s
+$(OUTDIR)/%.o: $(BTLDDIR)/%.s
 	@mkdir -p $(dir $@)
 	$(AS) $< -o $@
 
 dd:
-	dd if=./$(BINDIR)/boot.bin of=./floppy.img obs=512 count=1 conv=notrunc
-	dd if=./$(BINDIR)/kernel.bin of=./floppy.img obs=512 seek=1 conv=notrunc
+	dd if=./$(OUTDIR)/boot.bin of=./floppy.img obs=512 count=1 conv=notrunc
+	dd if=./$(OUTDIR)/kernel.bin of=./floppy.img obs=512 seek=1 conv=notrunc
 
 test:
 	bochs -f bochsrc
