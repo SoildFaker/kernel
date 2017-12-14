@@ -92,10 +92,9 @@ void kprintf(const char *string)
     kputc(*string++, COLOR_WHITE, COLOR_BLACK);
   }
 }
-
 void kprint_hex(u32 hex)
 {
-  char *pc = (char *)"0x00000000\0";
+  char *pc = (char *)"0x00000000";
   char *pc_t = pc;
   pc += 10;
   do{

@@ -14,13 +14,13 @@ start:
   or  $0x02, %al
   out %al, $0x92
 
-# load segment descriptor
-  movl $0x10, %eax
+  movw $0x18, %ax
+  movw %ax, %ss
+  movw $0x10, %ax
   movw %ax, %ds
   movw %ax, %es
   movw %ax, %fs
   movw %ax, %gs
-  movw %ax, %ss
 
 # switch to protect mode
   jmp  $0x8, $kmain
@@ -29,6 +29,7 @@ start:
 gdt: 
   .word 0,0,0,0
   .word 0x07ff, 0x0000, 0x9a00, 0x00c0    # code segment
+  .word 0x07ff, 0x0000, 0x9200, 0x00c0    # data segment
   .word 0x07ff, 0x0000, 0x9200, 0x00c0    # data segment
   
 idt_ptr:
