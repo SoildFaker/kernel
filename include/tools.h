@@ -24,4 +24,5 @@ void flush_screen();
 void flush_line(u8);
 void kprint_hex(u32 hex);
 void kprintf(const char *string);
+
 #endif
