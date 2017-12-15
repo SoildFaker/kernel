@@ -12,7 +12,7 @@ void kmain(){
   // use new stack space
   asm volatile ("movw $0x18, %ax");
   asm volatile ("movw %ax, %ss");
-  asm volatile ("movl %0, %%esp"::"a"(sizeof(stack)));
+  asm volatile ("movl %0, %%esp"::"a"((u32)&stack+sizeof(stack)));
   
   kprint("KERNEL LOADED\n");
 

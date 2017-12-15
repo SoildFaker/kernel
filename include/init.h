@@ -93,10 +93,10 @@ extern void gdt_flush(u32);
 extern void idt_flush(u32);
 
 void register_interrupt_handler(u8 n, interrupt_handler_t h);
-//void isr_handler(pt_regs *regs);
-void isr_handler(u32 esp);
-//void irq_handler(pt_regs *regs);
-void irq_handler(u32 esp);
+void isr_handler(pt_regs *regs);
+//void isr_handler(u32 esp);
+void irq_handler(pt_regs *regs);
+//void irq_handler(u32 esp);
 void init_descriptor_tables();
 void register_interrupt_handler(u8 n, interrupt_handler_t h);
 

@@ -155,9 +155,10 @@ void register_interrupt_handler(u8 n, interrupt_handler_t h)
 	interrupt_handlers[n] = h;
 }
 // IRQ 处理函数
-void irq_handler(u32 esp)
+/*void irq_handler(u32 esp)*/
+void irq_handler(pt_regs *regs)
 {
-  pt_regs *regs = (pt_regs *)((u32)&stack+esp);
+  /*pt_regs *regs = (pt_regs *)((u32)&stack+esp);*/
   // 发送中断结束信号给 PICs
   // 按照我们的设置，从 32 号中断起为用户自定义中断
   // 因为单片的 Intel 8259A 芯片只能处理 8 级中断
@@ -174,9 +175,10 @@ void irq_handler(u32 esp)
   }
 }
 
-void isr_handler(u32 esp)
+/*void isr_handler(u32 esp)*/
+void isr_handler(pt_regs *regs)
 {
-  pt_regs *regs = (pt_regs *)((u32)&stack+esp);
+  /*pt_regs *regs = (pt_regs *)((u32)&stack+esp);*/
   display_print_hex(regs->int_no);
   if (interrupt_handlers[regs->int_no]) {
     interrupt_handlers[regs->int_no](regs);
@@ -193,7 +195,7 @@ static void init_gdt()
   gdt_set_gate(0, 0, 0, 0, 0);
   gdt_set_gate(1, 0, 0xffffffff, A_CR, G_32);
   gdt_set_gate(2, 0, 0xffffffff, A_DRW, G_32);
-  gdt_set_gate(3, (u32)&stack, sizeof(stack), A_DRWA, G_32);
+  gdt_set_gate(3, 0, sizeof(stack), A_DRWA, G_32);
   gdt_set_gate(4, 0, 0xffffffff, A_DPL3|A_CR, G_32);
   gdt_set_gate(5, 0, 0xffffffff, A_DPL3|A_DRW, G_32);
   gdt_set_gate(6, 0, 0xffffffff, A_LDT, G_32);
