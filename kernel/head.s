@@ -3,7 +3,6 @@
 start:
   lgdt gdt_ptr           # load the new gdt pointer
   lidt idt_ptr
-
 # prepare to protect move
   movl %cr0, %eax
   or   $0x01, %al
@@ -22,15 +21,17 @@ start:
   movw %ax, %gs
 
 # switch to protect mode
-  jmp  $0x8, $kmain
+  jmp  $0x8, $move_kernel
 
 gdt: 
   .word 0,0,0,0
-  .word 0x07ff, 0x0000, 0x9a00, 0x00c0    # code segment
-  .word 0x07ff, 0x0000, 0x9200, 0x00c0    # data segment
-  
+  .word 0x07ff, 0x7e00, 0x9a00, 0x00c0    # code segment
+  .word 0x07ff, 0x7e00, 0x9200, 0x00c0    # data segment
+  .word 0x07ff, 0x0000, 0x9a10, 0x00c0    # second code segment
+  .word 0x07ff, 0x0000, 0x9210, 0x00c0    # second data segment
+  .word 0x07ff, 0x0000, 0x9300, 0x00c0    # second data segment
 idt_ptr:
   .word 0, 0, 0
 
 gdt_ptr:
-  .word 0x7fff, gdt, 0
+  .word 0x7fff, 0x7e00+gdt, 0

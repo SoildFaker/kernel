@@ -24,3 +24,8 @@ void kmain(){
   asm volatile ("sti");
   for(;;);
 }
+
+void gate_called()
+{
+  kprint("GATE CALLED\n");
+}

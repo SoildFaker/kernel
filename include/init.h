@@ -41,6 +41,7 @@
 #define IRQ13 45 // 协处理器使用
 #define IRQ14 46 // IDE0 传输控制使用
 #define IRQ15 47 // IDE1 传输控制使用
+
 struct pt_regs_t 
 {
   u32 ds;                  // Data segment selector
@@ -86,6 +87,16 @@ struct idt_ptr_struct
 typedef struct idt_ptr_struct idt_ptr_t;
 
 typedef void (*interrupt_handler_t)(pt_regs *);
+
+struct call_gate_struct
+{
+  u16 offset_low;
+  u16 selector;
+  u8  param_count;
+  u8  access;
+  u16 offset_high;
+};
+typedef struct call_gate_struct call_gate_t;
 
 extern u32 stack[1280];
 // These extern directives let us access the addresses of our ASM ISR handlers.

@@ -1,5 +1,29 @@
 .code32
 
+.global move_kernel
+move_kernel:
+  cli                     # interrupt closed
+  movw $0x10, %ax         # address copy from selector point to 0x7e00
+  movw %ax, %ds
+  movw $0x20, %ax        # address moved to  selector point to 0x10000
+  movw %ax, %es
+  movw $0x1000, %cx       # kernel size
+  subl %esi, %esi
+  subl %edi, %edi
+  rep  movsw
+
+  movw $0x20, %ax
+  movw %ax, %ds
+  movw %ax, %ss
+  movw %ax, %es
+  movw %ax, %fs
+  movw %ax, %gs
+
+  push %esp
+  movl $0xffff, %esp
+  sti
+  jmp  $0x18, $kmain
+
 .global gdt_flush
 gdt_flush:
   movl 4(%esp), %eax    # give a parameter (gdt_table entry address)
@@ -49,6 +73,7 @@ idt_flush:
 # In init.c
 .extern isr_handler
 .extern irq_handler
+.extern .long kernel_size
 
 # This is our common ISR stub. It saves the processor state, sets
 # up for kernel mode segments, calls the C-level fault handler,
