@@ -6,9 +6,10 @@ INCLUDE = -I./include
 
 OUTDIR = bin
 KNLDIR = kernel
+DRIVERDIR = drivers
 BTLDDIR = boot
 
-KNLSRC = $(wildcard $(KNLDIR)/*.c)
+KNLSRC = $(wildcard $(KNLDIR)/*.c) $(wildcard $(DRIVERDIR)/*.c)
 KNLASM = $(wildcard $(KNLDIR)/*.s)
 # We need head.o be placed ahead, so filter out here
 KNLASM := $(filter-out head.s, $(KNLASM))
@@ -38,6 +39,10 @@ $(OUTDIR)/boot.bin: $(BTLDOBJ)
 	$(LD) -Ttext 0x7c00 --oformat=binary $(BTLDOBJ) -o $(OUTDIR)/boot.bin
 
 $(OUTDIR)/%.o: $(KNLDIR)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(GCFLAGS) -c $< -o $@
+
+$(OUTDIR)/%.o: $(DRIVERDIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(GCFLAGS) -c $< -o $@
 
