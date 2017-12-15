@@ -1,28 +1,35 @@
 #ifndef __TOOLS__
 #define __TOOLS__ 
 
-#include <types.h>
+#include "types.h"
+#include "display.h"
 
-#define COLOR_BLACK  0
-#define COLOR_BLUE  1
-#define COLOR_GREEN  2
-#define COLOR_CYAN  3
-#define COLOR_RED  4
-#define COLOR_MAGENTA  5
-#define COLOR_BROWN  6
-#define COLOR_LIGHT_GREY  7
-#define COLOR_DARK_GREY  8
-#define COLOR_LIGHT_BLUE  9
-#define COLOR_LIGHT_GREEN  10
-#define COLOR_LIGHT_CYAN  11
-#define COLOR_LIGHT_RED  12
-#define COLOR_LIGHT_MAGENTA  13
-#define COLOR_LIGHT_BROWN  14
-#define COLOR_WHITE  15
+typedef __builtin_va_list va_list;
 
-void flush_screen();
-void flush_line(u8);
-void kprint_hex(u32 hex);
-void kprintf(const char *string);
+#define va_start(ap, last) (__builtin_va_start(ap, last))
+#define va_arg(ap, type) (__builtin_va_arg(ap, type))
+#define va_end(ap)
+
+#define is_digit(c)	((c) >= '0' && (c) <= '9')
+
+#define ZEROPAD		1   	// pad with zero
+#define SIGN	 	  2   	// unsigned/signed long
+#define PLUS    	4	    // show plus
+#define SPACE	   	8   	// space if plus
+#define LEFT	  	16  	// left justified
+#define SPECIAL		32  	// 0x
+#define SMALL	  	64  	// use 'abcdef' instead of 'ABCDEF'
+
+#define do_div(n,base) ({ \
+		int __res; \
+		__asm__("divl %4":"=a" (n),"=d" (__res):"0" (n),"1" (0),"r" (base)); \
+		__res; })
+
+
+ // 内核的打印函数
+void kprint(const char *format, ...);
+int vsprintf(char *buff, const char *format, va_list args);
+// 内核的打印函数带颜色
+void kprint_color(u8 back, u8 fore, const char *format, ...);
 
 #endif
