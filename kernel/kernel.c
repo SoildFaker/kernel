@@ -1,19 +1,26 @@
-#include <types.h>
-#include <common.h>
-#include <descriptor.h>
-#include <tools.h>
+#include "types.h"
+#include "common.h"
+#include "init.h"
+#include "tools.h"
+#include "display.h"
+#include "timer.h"
 
-extern void load_segment();
 void kmain(){
   flush_screen();
   init_descriptor_tables();
+
+  // use new stack space
+  asm volatile ("movw $0x18, %ax");
+  asm volatile ("movw %ax, %ss");
+  asm volatile ("movl %0, %%esp"::"a"(sizeof(stack)));
   
-  kprintf("KERNEL LOADED\n");
-  kprintf("KERNEL LOADED\n");
-  kprintf("KERNEL LOADED\n");
-  kprintf("KERNEL LOADED\n");
-  kprint_hex(0x00fea788);
-  kprintf("\n");
-  /*kprint_hex(0x7448);*/
+  kprint("KERNEL LOADED\n");
+
+  asm volatile ("int $0x3");
+  asm volatile ("int $0x4");
+
+  /*init_timer(200);*/
+
+  asm volatile ("sti");
   for(;;);
 }
