@@ -6,8 +6,8 @@
 #include "timer.h"
 
 void kmain(){
-  flush_screen();
   init_descriptor_tables();
+  flush_screen();
 
   // use new stack space
   asm volatile ("movw $0x18, %ax");

@@ -6,18 +6,17 @@
 /*ENTRY(start)*/
 SECTIONS
 {
-
-  /*. = 0x0000;*/
+  . = 0x00100000;
   PROVIDE( kernel_start = . );
   .text :
   {
     *(.text)
-    *(.rodata*)
   }
 
   .data :
   {
     *(.data)
+    *(.rodata*)
   }
 
   .bss :
