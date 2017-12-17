@@ -51,54 +51,72 @@ idt_flush:
 .extern irq_handler
 .extern .long kernel_size
 
-# This is our common ISR stub. It saves the processor state, sets
-# up for kernel mode segments, calls the C-level fault handler,
-# and finally restores the stack frame.
-isr_common_stub:
-
-  pusha                    # Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
-
-  movw  %ds, %ax             # Lower 16-bits of eax = ds.
-  pushl %eax                 # save the data segment descriptor
-
-  movw $0x10, %ax  # load the kernel data segment descriptor
-  movw %ax, %ds
-
-  pushl %esp
-  call isr_handler
-  addl $4, %esp
-
-  popl %ebx        # reload the original data segment descriptor
-  movw %bx, %ds
-
-  popa                     # Pops edi,esi,ebp...
-  addl $8, %esp    # Cleans up the pushed error code and pushed ISR number
-  sti
-  iret           # pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
-
-# This is our common IRQ stub. It saves the processor state, sets
+# This is our common stub. It saves the processor state, sets
 # up for kernel mode segments, calls the C-level fault handler,
 # and finally restores the stack frame.
 irq_common_stub:
   pusha                    # Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
 
-  movw  %ds, %ax             # Lower 16-bits of eax = ds.
-  pushl %eax                 # save the data segment descriptor
+  push %ds
+  push %es
+  push %fs
+  push %gs
+  #movw  %ds, %ax             # Lower 16-bits of eax = ds.
+  #pushl %eax                 # save the data segment descriptor
 
   movw $0x10, %ax  # load the kernel data segment descriptor
   movw %ax, %ds
+  movw %ax, %es
+  movw %ax, %gs
+  movw %ax, %fs
 
   pushl %esp
   call irq_handler
   addl $4, %esp
 
-  popl %ebx        # reload the original data segment descriptor
-  movw %bx, %ds
+  #popl %ebx        # reload the original data segment descriptor
+  #movw %bx, %ds
 
+  pop %gs
+  pop %fs
+  pop %es
+  pop %ds
   popa                     # Pops edi,esi,ebp...
   addl $8, %esp    # Cleans up the pushed error code and pushed ISR number
   sti
   iret           # pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
+isr_common_stub:
+  pusha                    # Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
+
+  push %ds
+  push %es
+  push %fs
+  push %gs
+  #movw  %ds, %ax             # Lower 16-bits of eax = ds.
+  #pushl %eax                 # save the data segment descriptor
+
+  movw $0x10, %ax  # load the kernel data segment descriptor
+  movw %ax, %ds
+  movw %ax, %es
+  movw %ax, %gs
+  movw %ax, %fs
+
+  pushl %esp
+  call isr_handler
+  addl $4, %esp
+
+  #popl %ebx        # reload the original data segment descriptor
+  #movw %bx, %ds
+
+  pop %gs
+  pop %fs
+  pop %es
+  pop %ds
+  popa                     # Pops edi,esi,ebp...
+  addl $8, %esp    # Cleans up the pushed error code and pushed ISR number
+  sti
+  iret           # pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
+
 
 ISR_NOERRCODE 0
 ISR_NOERRCODE 1
@@ -151,5 +169,4 @@ IRQ 12, 44 # 接 PS/2 鼠标，也可设定给其他硬件
 IRQ 13, 45 # 协处理器使用
 IRQ 14, 46 # IDE0 传输控制使用
 IRQ 15, 47 # IDE1 传输控制使用
-
 

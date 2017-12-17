@@ -20,7 +20,7 @@ void kprint(const char *format, ...)
 	display_print(buff);
 }
 
-void kprint_color(u8 back, u8 fore, const char *format, ...)
+void kprint_color(u8 fore, u8 back, const char *format, ...)
 {
 	// 避免频繁创建临时变量，内核的栈很宝贵
 	static char buff[1024];
