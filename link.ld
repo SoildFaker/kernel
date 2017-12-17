@@ -24,6 +24,5 @@ SECTIONS
     *(.bss)
   }
   PROVIDE( kernel_end = . );
-  PROVIDE( kernel_size = kernel_end - kernel_start );
 
 }
