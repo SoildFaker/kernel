@@ -4,6 +4,7 @@
 #include "tools.h"
 #include "display.h"
 #include "timer.h"
+#include "keyboard.h"
 #include "mm.h"
 
 extern u8 kernel_start[];
@@ -12,11 +13,6 @@ void kmain(){
   flush_screen();
   init_descriptor_tables();
 
-  // use new stack space
-  asm volatile ("movw $0x18, %ax");
-  asm volatile ("movw %ax, %ss");
-  asm volatile ("movl %0, %%esp"::"a"((u32)&stack+sizeof(stack)));
-  
   kprint("KERNEL LOADED\n");
   kprint("KERNEL START: %x\n", kernel_start);
   kprint("KERNEL END:   %x\n", kernel_end);
@@ -28,8 +24,10 @@ void kmain(){
   asm volatile ("int $0x4");
 
   /*init_timer(200);*/
+  init_keyboard();
 
-  asm volatile ("sti");
+  asm volatile("sti");
+  
   for(;;);
 }
 
