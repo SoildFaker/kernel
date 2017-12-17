@@ -42,8 +42,7 @@
 #define IRQ14 46 // IDE0 传输控制使用
 #define IRQ15 47 // IDE1 传输控制使用
 
-struct pt_regs_t 
-{
+struct pt_regs_t {
   u32 ds;                  // Data segment selector
   u32 edi, esi, ebp, esp, ebx, edx, ecx, eax; // Pushed by pusha.
   u32 int_no, err_code;    // Interrupt number and error code (if applicable)
