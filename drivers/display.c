@@ -64,6 +64,7 @@ void display_putc(char c, u8 fg, u8 bg)
   if (c == 0x08 && cursor_x) {
     // backspace
     cursor_x--;
+    video_buffer[cursor_y*80 + cursor_x] = ' ' | (COLOR_BLACK|COLOR_BLACK<<4);
   } else if (c == 0x09) {
     //tab
     cursor_x = (cursor_x+8) & ~(8-1);
