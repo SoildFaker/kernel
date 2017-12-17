@@ -21,14 +21,6 @@ load_disk:
   xor  %bx, %bx
   movw $0x0200+1, %ax   # AH function index AL number of sector
   int  $0x13
-
-  movw $0x0000, %dx       # bios int 0x13 read data from disk
-  movw $0x0003, %cx       # thrid sector
-  movw $0x0900, %ax       # move to 0x00100000 in menory
-  movw %ax, %es           # ES:BX point to buffer
-  xor  %bx, %bx
-  movw $0x0200+17, %ax   # AH function index AL number of sector
-  int  $0x13
   jnc  ok_loaded
 die:  jmp  die
 

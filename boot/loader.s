@@ -1,6 +1,18 @@
 .code16
 
 start:
+
+load_kernel:
+  movw $0x0000, %dx       # bios int 0x13 read data from disk
+  movw $0x0003, %cx       # thrid sector
+  movw $0x0900, %ax       # move to 0x00100000 in menory
+  movw %ax, %es           # ES:BX point to buffer
+  xor  %bx, %bx
+  movw $0x0200+17, %ax   # AH function index AL number of sector
+  int  $0x13
+  jnc  get_memory_map
+die: jmp die
+
 # use the INT 0x15, eax= 0xE820 BIOS function to get a memory map
 # inputs: es:di -> destination buffer for 24 byte entries
 # outputs: bp = entry count, trashes all registers except esi
@@ -67,5 +79,4 @@ gdt:
 
 gdt_ptr:
   .word 0x7fff, gdt, 0
-
 
