@@ -43,7 +43,7 @@
 #define IRQ15 47 // IDE1 传输控制使用
 
 struct pt_regs_t {
-  u32 ds;                  // Data segment selector
+  u32 gs, fs, es, ds;                  // Data segment selector
   u32 edi, esi, ebp, esp, ebx, edx, ecx, eax; // Pushed by pusha.
   u32 int_no, err_code;    // Interrupt number and error code (if applicable)
   u32 eip, cs, eflags, useresp, ss; // Pushed by the processor automatically.
@@ -102,6 +102,8 @@ extern u32 stack[1280];
 extern void gdt_flush(u32);
 extern void idt_flush(u32);
 
+void irq_eoi(u32 nr);
+void irq_enable(u8 irq);
 void register_interrupt_handler(u8 n, interrupt_handler_t h);
 void isr_handler(pt_regs *regs);
 //void isr_handler(u32 esp);

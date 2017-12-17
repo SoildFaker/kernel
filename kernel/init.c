@@ -16,12 +16,21 @@ idt_entry_t idt_entries[256];
 idt_ptr_t   idt_ptr;
 interrupt_handler_t interrupt_handlers[256];
 
+static inline void init_stack()
+{
+  // use new stack space
+  asm volatile ("movw $0x18, %ax");
+  asm volatile ("movw %ax, %ss");
+  asm volatile ("movl %0, %%esp"::"a"((u32)&stack+sizeof(stack)));
+}
+
 void init_descriptor_tables()
 {
   init_gdt();
   kprint("GDT LOADED\n");
   init_idt();
   kprint("IDT LOADED\n");
+  init_stack();
 }
 
 static void gdt_set_gate(
@@ -82,14 +91,15 @@ static void init_8259A()
   outb(0x01, 0x21);
   outb(0x01, 0xA1);
  
-  // 设置主从片允许中断
-  outb(0x0, 0x21);
-  outb(0x0, 0xA1);
+  // 设置主从片不允许中断
+  outb(0xFF, 0x21);
+  outb(0xFF, 0xA1);
 }
 
 static void init_idt()
 {
   init_8259A();
+  irq_enable(2);
   idt_ptr.limit = sizeof(idt_entries) - 1;
   idt_ptr.base  = (u32)&idt_entries;
 
@@ -154,24 +164,40 @@ void register_interrupt_handler(u8 n, interrupt_handler_t h)
 {
 	interrupt_handlers[n] = h;
 }
+
 // IRQ 处理函数
-/*void irq_handler(u32 esp)*/
-void irq_handler(pt_regs *regs)
+// 发送中断结束信号给 PICs
+// 按照我们的设置，从 32 号中断起为用户自定义中断
+// 因为单片的 Intel 8259A 芯片只能处理 8 级中断
+// 故大于等于 40 的中断号是由从片处理的
+void irq_eoi(u32 nr)
 {
-  /*pt_regs *regs = (pt_regs *)((u32)&stack+esp);*/
-  // 发送中断结束信号给 PICs
-  // 按照我们的设置，从 32 号中断起为用户自定义中断
-  // 因为单片的 Intel 8259A 芯片只能处理 8 级中断
-  // 故大于等于 40 的中断号是由从片处理的
-  if (regs->int_no >= 40) {
-  // 发送重设信号给从片
-    outb(0x20, 0xA0);
-  }
   // 发送重设信号给主片
   outb(0x20, 0x20);
-  
-  if (interrupt_handlers[regs->int_no]) {
-    interrupt_handlers[regs->int_no](regs);
+  if(nr >= 10) {
+    // 发送重设信号给从片
+    outb(0x20, 0xA0);
+  }
+}
+
+void irq_enable(u8 irq)
+{
+  u16 irq_mask = (inb(0xA1)<<8) + inb(0x21);
+  irq_mask &= ~(1<<irq);
+  outb(irq_mask, 0x21);
+  outb(irq_mask >> 8, 0xA1);
+}
+
+void irq_handler(pt_regs *regs)
+{
+  interrupt_handler_t handler = interrupt_handlers[regs->int_no];
+  if (regs->int_no < 32) {
+    if(handler)
+      handler(regs);
+  } else {
+    irq_eoi(regs->int_no);
+    if(handler)
+      handler(regs);
   }
 }
 
@@ -182,7 +208,7 @@ void isr_handler(pt_regs *regs)
   if (interrupt_handlers[regs->int_no]) {
     interrupt_handlers[regs->int_no](regs);
   } else {
-    kprint_color(COLOR_BLACK, COLOR_BLUE, "INT: %x\n", regs->int_no);
+    kprint_color(COLOR_BLUE, COLOR_BLACK, "INT: %d\n", regs->int_no);
   }
 }
 
