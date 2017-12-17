@@ -179,7 +179,6 @@ void irq_handler(pt_regs *regs)
 void isr_handler(pt_regs *regs)
 {
   /*pt_regs *regs = (pt_regs *)((u32)&stack+esp);*/
-  display_print_hex(regs->int_no);
   if (interrupt_handlers[regs->int_no]) {
     interrupt_handlers[regs->int_no](regs);
   } else {
