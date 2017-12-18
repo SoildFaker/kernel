@@ -1,4 +1,7 @@
-#include <types.h>
+#ifndef __INIT__
+#define __INIT__
+
+#include "types.h"
 
 #define G_32    0xcf
 #define G_16    0x0f
@@ -168,3 +171,5 @@ extern void irq12(); // 接 PS/2 鼠标，也可设定给其他硬件
 extern void irq13(); // 协处理器使用
 extern void irq14(); // IDE0 传输控制使用
 extern void irq15(); // IDE1 传输控制使用
+
+#endif
