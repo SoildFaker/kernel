@@ -27,9 +27,9 @@ static inline void init_stack()
 void init_descriptor_tables()
 {
   init_gdt();
-  kprint("GDT LOADED\n");
+  kprint("GDT OK\n");
   init_idt();
-  kprint("IDT LOADED\n");
+  kprint("IDT OK\n");
   init_stack();
 }
 
@@ -191,13 +191,13 @@ void irq_enable(u8 irq)
 void irq_handler(pt_regs *regs)
 {
   interrupt_handler_t handler = interrupt_handlers[regs->int_no];
-  if (regs->int_no < 32) {
-    if(handler)
-      handler(regs);
-  } else {
+  if (regs->int_no > 32) {
     irq_eoi(regs->int_no);
-    if(handler)
-      handler(regs);
+  }
+  if(handler){
+    handler(regs);
+  }else{
+    kprint_color(COLOR_BLUE, COLOR_BLACK, "INT: %d NO HANDLER\n", regs->int_no);
   }
 }
 
@@ -208,7 +208,7 @@ void isr_handler(pt_regs *regs)
   if (interrupt_handlers[regs->int_no]) {
     interrupt_handlers[regs->int_no](regs);
   } else {
-    kprint_color(COLOR_BLUE, COLOR_BLACK, "INT: %d\n", regs->int_no);
+    kprint_color(COLOR_BLUE, COLOR_BLACK, "INT: %d NO HANDLER\n", regs->int_no);
   }
 }
 
