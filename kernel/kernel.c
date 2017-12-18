@@ -6,12 +6,14 @@
 #include "timer.h"
 #include "keyboard.h"
 #include "mm.h"
+#include "paging.h"
 
 extern u8 kernel_start[];
 extern u8 kernel_end[];
 void kmain(){
   flush_screen();
   init_descriptor_tables();
+  init_page();
 
   kprint("KERNEL LOADED\n");
   kprint("KERNEL START: %x\n", kernel_start);

@@ -23,7 +23,6 @@
 #define A_CCO   0x9c
 #define A_CCOR  0x9e
 
-
 // 定义IRQ
 #define IRQ0 32 // 电脑系统计时器
 #define IRQ1 33 // 键盘
