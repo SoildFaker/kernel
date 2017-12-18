@@ -6,7 +6,7 @@
 #include "timer.h"
 #include "keyboard.h"
 #include "mm.h"
-#include "paging.h"
+#include "page.h"
 
 extern u8 kernel_start[];
 extern u8 kernel_end[];
@@ -14,6 +14,7 @@ void kmain(){
   flush_screen();
   init_descriptor_tables();
   init_page();
+  kprint("PAGE OK\n");
 
   kprint("KERNEL LOADED\n");
   kprint("KERNEL START: %x\n", kernel_start);
@@ -21,9 +22,6 @@ void kmain(){
   kprint("KERNEL SIZE:  %d kb\n", (kernel_end - kernel_start+1023)/1024);
 
   show_memory_map();
-
-  asm volatile ("int $0x3");
-  asm volatile ("int $0x4");
 
   /*init_timer(200);*/
   init_keyboard();
