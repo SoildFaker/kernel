@@ -5,6 +5,14 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+/* this panic just get into dead loop */
+#define  PANIC(Expression)                       \
+  {                                              \
+    kprint("KERNEL PANIC: %s\n", Expression);    \
+    while(1) ;                                   \
+  }                                              \
+
+
 /* Basic port I/O */
 static inline void outb(u8 v, u16 port)
 {
