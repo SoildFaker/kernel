@@ -1,5 +1,33 @@
 .code32
 
+.global switch_task
+switch_task:
+# save current content
+  movl 4(%esp), %eax # current env pointer
+  
+  movl %esp,   (%eax)
+  movl %ebp,  4(%eax)
+  movl %ebx,  8(%eax)
+  movl %esi, 12(%eax)
+  movl %edi, 16(%eax)
+  pushf
+  pop  %ecx
+  movl %ecx, 20(%eax)
+  
+# switch to next
+  movl 8(%esp), %eax # next env pointer
+
+  movl   (%eax), %esp
+  movl  4(%eax), %ebp
+  movl  8(%eax), %ebx
+  movl 12(%eax), %esi
+  movl 16(%eax), %edi
+  movl 20(%eax), %eax
+  push %eax
+  popf
+  
+  ret
+
 .global gdt_flush
 gdt_flush:
   movl 4(%esp), %eax    # give a parameter (gdt_table entry address)
@@ -85,6 +113,7 @@ irq_common_stub:
   addl $8, %esp    # Cleans up the pushed error code and pushed ISR number
   sti
   iret           # pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
+
 isr_common_stub:
   pusha                    # Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
 
