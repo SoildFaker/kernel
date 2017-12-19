@@ -7,9 +7,8 @@
 u32 tick = 0;
 void timer_callback()
 {
-  tick++;
+  /*tick++;*/
   /*kprint_color(COLOR_BLUE, COLOR_BLACK, "Tick: %u\n", tick);*/
-  display_putc('T',COLOR_BLUE, COLOR_BLACK);
   schedule();
 }
 
