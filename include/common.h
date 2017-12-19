@@ -12,6 +12,13 @@
     while(1) ;                                   \
   }                                              \
 
+struct list {
+  struct list *next;
+  struct list *prev;
+};
+
+extern u8 kernel_start[];
+extern u8 kernel_end[];
 
 /* Basic port I/O */
 static inline void outb(u8 v, u16 port)
