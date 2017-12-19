@@ -4,23 +4,35 @@
 #include "display.h"
 #include "tools.h"
 
-__attribute__((aligned(4096))) page_entry_t pdt[1024];
-__attribute__((aligned(4096))) page_entry_t pet[1024];
+u32 page_addr;
+u32 phy_addr = 0x0;;
 void init_page()
 {
   u32 i;
   for(i=0; i<1024;i++){
-    pet[i].base = ((0x000000 + i*0x1000)>>12);
-    pet[i].flags = 0x1;
+    phy_addr = 0x000000 + i*0x1000;
+    pet[i].base = (phy_addr>>12);
+    pet[i].flags = PT_PRESENT | PT_READWRITE;
   }
   pdt[0].base = (u32)(&pet)>>12;
-  pdt[0].flags = 1;
+  pdt[0].flags = PT_PRESENT | PT_READWRITE;
 
   register_interrupt_handler(14, (interrupt_handler_t)page_fault);
 
   flush_page_directory(pdt);
   enable_page();
 }
+
+void page_alloc()
+{
+
+}
+
+void page_free()
+{
+
+}
+
 void flush_page_directory(page_entry_t *pgdir) {
   asm volatile("mov %%eax, %%cr3":: "a"(pgdir));    // put page table addr
 }

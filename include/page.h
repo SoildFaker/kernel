@@ -6,6 +6,9 @@
 #include "types.h"
 
 #define  PT_PRESENT 0x01
+#define  PT_READWRITE 0x02
+
+#define PAGE_SIZE 4096
 
 struct page_entry {
   u32 flags  : 9;  // page flags
@@ -14,17 +17,10 @@ struct page_entry {
 };
 typedef struct page_entry page_entry_t;
 
-struct page_table {
-  page_entry_t pages[1024];
-}__attribute__((aligned(4096)));
-typedef struct page_table page_table_t;
+__attribute__((aligned(PAGE_SIZE))) page_entry_t pdt[1024];
+__attribute__((aligned(PAGE_SIZE))) page_entry_t pet[1024];
 
-struct page_directory {
-  page_table_t page_tables[1024];
-}__attribute__((aligned(4096)));
-typedef struct page_directory page_directory_t;
-
-void flush_page_directory(page_entry_t* directory);
+void flush_page_directory(page_entry_t *directory);
 void enable_page();
 void init_page();
 void page_fault(pt_regs *regs);
