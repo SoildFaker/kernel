@@ -6,10 +6,9 @@
 #include "timer.h"
 #include "keyboard.h"
 #include "mm.h"
+#include "task.h"
 #include "page.h"
 
-extern u8 kernel_start[];
-extern u8 kernel_end[];
 void kmain(){
   flush_screen();
   init_descriptor_tables();
@@ -23,12 +22,15 @@ void kmain(){
 
   show_memory_map();
 
-  /*init_timer(200);*/
+  init_task();
+  init_timer(200);
   init_keyboard();
 
   asm volatile("sti");
   
-  for(;;);
+  for(;;)
+    kprint("C");
+
 }
 
 void gate_called()

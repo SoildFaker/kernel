@@ -13,5 +13,8 @@ struct mmap_entry {
 }__attribute__((packed));
 typedef struct mmap_entry mmap_entry_t;
 
+extern mmap_entry_t *mmap;
+extern u32 *count;
+
 void show_memory_map();
 #endif

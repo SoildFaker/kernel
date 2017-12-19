@@ -174,7 +174,7 @@ void irq_eoi(u32 nr)
 {
   // 发送重设信号给主片
   outb(0x20, 0x20);
-  if(nr >= 10) {
+  if(nr >= 40) {
     // 发送重设信号给从片
     outb(0x20, 0xA0);
   }
@@ -191,7 +191,7 @@ void irq_enable(u8 irq)
 void irq_handler(pt_regs *regs)
 {
   interrupt_handler_t handler = interrupt_handlers[regs->int_no];
-  if (regs->int_no > 32) {
+  if (regs->int_no >= 32) {
     irq_eoi(regs->int_no);
   }
   if(handler){
