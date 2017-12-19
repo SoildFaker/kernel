@@ -23,13 +23,13 @@ void kmain(){
   show_memory_map();
 
   init_task();
-  init_timer(200);
+  init_timer(20);
   init_keyboard();
 
   asm volatile("sti");
   
-  for(;;)
-    kprint("C");
+  asm volatile("hlt");
+  for(;;);
 
 }
 

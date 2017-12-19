@@ -1,31 +1,53 @@
 .code32
 
+.global load_test_a
+load_test_a:
+  movl  4(%esp), %eax # current env pointer
+
+  movl  4(%eax), %esp
+  movl  8(%eax), %ebp
+  movl 12(%eax), %ebx
+  movl 16(%eax), %ecx
+  movl 20(%eax), %edx
+  movl 24(%eax), %esi
+  movl 28(%eax), %edi
+  push 32(%eax)
+  # push %eax
+  popf
+  push (%eax)
+  ret
+ 
 .global switch_task
 switch_task:
 # save current content
   movl 4(%esp), %eax # current env pointer
-  
-  movl %esp,   (%eax)
-  movl %ebp,  4(%eax)
-  movl %ebx,  8(%eax)
-  movl %esi, 12(%eax)
-  movl %edi, 16(%eax)
+ 
+  push (%esp)
+  pop  (%eax)
+  movl %esp,  4(%eax) 
+  movl %ebp,  8(%eax) 
+  movl %ebx, 12(%eax) 
+  movl %ecx, 16(%eax) 
+  movl %edx, 20(%eax) 
+  movl %esi, 24(%eax) 
+  movl %edi, 28(%eax) 
   pushf
-  pop  %ecx
-  movl %ecx, 20(%eax)
+  pop  32(%eax)
   
 # switch to next
-  movl 8(%esp), %eax # next env pointer
+  movl  8(%esp), %eax # next env pointer
 
-  movl   (%eax), %esp
-  movl  4(%eax), %ebp
-  movl  8(%eax), %ebx
-  movl 12(%eax), %esi
-  movl 16(%eax), %edi
-  movl 20(%eax), %eax
-  push %eax
+  movl  4(%eax), %esp
+  movl  8(%eax), %ebp
+  movl 12(%eax), %ebx
+  movl 16(%eax), %ecx
+  movl 20(%eax), %edx
+  movl 24(%eax), %esi
+  movl 28(%eax), %edi
+  push 32(%eax)
+  # push %eax
   popf
-  
+  push (%eax)
   ret
 
 .global gdt_flush
