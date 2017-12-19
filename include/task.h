@@ -4,9 +4,12 @@
 #include "types.h"
 
 struct task_env {
+ 	u32 eip;
  	u32 esp;
 	u32 ebp;
 	u32 ebx;
+	u32 ecx;
+	u32 edx;
 	u32 esi;
 	u32 edi;
 	u32 eflags;
