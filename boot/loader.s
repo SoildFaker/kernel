@@ -8,7 +8,7 @@ load_kernel:
   movw $0x0900, %ax       # move to 0x00100000 in menory
   movw %ax, %es           # ES:BX point to buffer
   xor  %bx, %bx
-  movw $0x0200+34, %ax   # AH function index AL number of sector
+  movw $0x0200+40, %ax   # AH function index AL number of sector
   int  $0x13
   jnc  get_memory_map
 die: jmp die
