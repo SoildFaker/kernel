@@ -1,29 +1,35 @@
 #include "task.h"
+#include "mm.h"
 #include "tools.h"
 #include "common.h"
 #include "types.h"
 
-struct task_ctl test_ab[2];
-struct task_env test_env_ab[2];
-u32 task_stack1[64];
-u32 task_stack2[64];
 u8 frist = 1;
 u8 flag = 0;
 
 void init_task()
 {
-  test_ab[0].current_env = &test_env_ab[0];
-  test_ab[0].current_env->esp = (u32)&task_stack1+sizeof(task_stack1);
-  test_ab[0].current_env->eip = (u32)test_a;
-  test_ab[0].current_env->eflags = 0x200;
-  test_ab[0].task_next = &test_ab[1];
+  struct task_ctl *task_a = (struct task_ctl *)kmalloc(sizeof(struct task_ctl));
+  struct task_ctl *task_b = (struct task_ctl *)kmalloc(sizeof(struct task_ctl));
+  struct task_env *task_a_env = (struct task_env *)kmalloc(sizeof(struct task_env));
+  struct task_env *task_b_env = (struct task_env *)kmalloc(sizeof(struct task_env));
+  u32 *task_stack1 = (u32 *)kmalloc(sizeof(u32)*64);
+  u32 *task_stack2 = (u32 *)kmalloc(sizeof(u32)*64);
 
-  test_ab[1].current_env = &test_env_ab[1];
-  test_ab[1].current_env->esp = (u32)&task_stack2+sizeof(task_stack2);
-  test_ab[1].current_env->eip = (u32)test_b;
-  test_ab[1].current_env->eflags = 0x200;
-  test_ab[1].task_next = &test_ab[0];
-  task_now = &test_ab[0];
+  task_a->current_env = task_a_env;
+  task_a->current_env->ecx = 0;
+  task_a->current_env->esp = (u32)task_stack1+sizeof(u32)*63;
+  task_a->current_env->eip = (u32)test_a;
+  task_a->current_env->eflags = 0x200;
+  task_a->task_next = task_b;
+
+  /**task_b->current_env = 0;*/
+  task_b->current_env = task_b_env;
+  task_b->current_env->esp = (u32)task_stack2+sizeof(u32)*63;
+  task_b->current_env->eip = (u32)test_b;
+  task_b->current_env->eflags = 0x200;
+  task_b->task_next = task_a;
+  task_now = task_a;
 
 }
 
