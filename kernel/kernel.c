@@ -9,7 +9,8 @@
 #include "task.h"
 #include "page.h"
 
-void kmain(){
+void kmain()
+{
   flush_screen();
   init_descriptor_tables();
   init_page();
@@ -21,7 +22,10 @@ void kmain(){
   kprint("KERNEL SIZE:  %d kb\n", (kernel_end - kernel_start+1023)/1024);
 
   show_memory_map();
+  init_pmm();
 
+  kprint_color(COLOR_BROWN, COLOR_BLACK, "\nThe Count of Physical Memory Page is: % u\n\n", phy_page_count);
+  
   init_task();
   init_timer(20);
   init_keyboard();
