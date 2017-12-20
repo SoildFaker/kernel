@@ -5,27 +5,28 @@
 #include "types.h"
 
 u8 frist = 1;
-u8 flag = 0;
 
+u8 *flag;
 void init_task()
 {
+  flag = (u8 *)kmalloc(sizeof(u8));;
   struct task_ctl *task_a = (struct task_ctl *)kmalloc(sizeof(struct task_ctl));
   struct task_ctl *task_b = (struct task_ctl *)kmalloc(sizeof(struct task_ctl));
   struct task_env *task_a_env = (struct task_env *)kmalloc(sizeof(struct task_env));
   struct task_env *task_b_env = (struct task_env *)kmalloc(sizeof(struct task_env));
-  u32 *task_stack1 = (u32 *)kmalloc(sizeof(u32)*64);
-  u32 *task_stack2 = (u32 *)kmalloc(sizeof(u32)*64);
+  u32 *task_stack1 = (u32 *)kmalloc(sizeof(u32)*1024);
+  u32 *task_stack2 = (u32 *)kmalloc(sizeof(u32)*1024);
 
   task_a->current_env = task_a_env;
   task_a->current_env->ecx = 0;
-  task_a->current_env->esp = (u32)task_stack1+sizeof(u32)*63;
+  task_a->current_env->esp = (u32)task_stack1+sizeof(u32)*1024;
   task_a->current_env->eip = (u32)test_a;
   task_a->current_env->eflags = 0x200;
   task_a->task_next = task_b;
 
   /**task_b->current_env = 0;*/
   task_b->current_env = task_b_env;
-  task_b->current_env->esp = (u32)task_stack2+sizeof(u32)*63;
+  task_b->current_env->esp = (u32)task_stack2+sizeof(u32)*1024;
   task_b->current_env->eip = (u32)test_b;
   task_b->current_env->eflags = 0x200;
   task_b->task_next = task_a;
@@ -57,9 +58,9 @@ u32 sw = 0;
 void test_a()
 {
   while(1){
-    if (flag == 1){
+    if (*flag == 1){
       display_putc('A',COLOR_GREEN, COLOR_BLACK);
-      flag = 0;
+      *flag = 0;
     }
     sw++;
   }
@@ -68,9 +69,9 @@ void test_a()
 void test_b()
 {
   while(1){
-    if (flag == 0){
+    if (*flag == 0){
       display_putc('B',COLOR_RED, COLOR_BLACK);
-      flag = 1;
+      *flag = 1;
     }
     sw++;
   }
