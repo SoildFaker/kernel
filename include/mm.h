@@ -11,13 +11,18 @@
 #define PAGE_MAX_NUM    (MEMORY_SIZE/PAGE_SIZE)
 
 struct mmap_entry {
-	u32 base_low;
-	u32 base_high;
-	u32 length_low;
-	u32 length_high;
-	u32 type;
+  u32 base_low;
+  u32 base_high;
+  u32 length_low;
+  u32 length_high;
+  u32 type;
 }__attribute__((packed));
 typedef struct mmap_entry mmap_entry_t;
+
+struct memory_header {
+  u8 used;
+  struct memory_header *next;
+};
 
 extern u8 kernel_start[];
 extern u8 kernel_end[];
