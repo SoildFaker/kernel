@@ -20,6 +20,10 @@
 #define COLOR_LIGHT_BROWN  14
 #define COLOR_WHITE  15
 
+void draw_line(u16 x1, u16 y1, u16 x2, u16 y2, u8 color);
+void draw_rectangle(u16 x, u16 y, u16 width, u16 hight, u8 color);
+void print_font8(u16 x, u16 y, u8 ch);
+
 void flush_screen();
 void flush_line(u8);
 void display_print_color(const char *string, u8 fg, u8 bg);
