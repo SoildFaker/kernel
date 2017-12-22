@@ -2,6 +2,10 @@
 
 start:
 
+  movb $0x13, %al
+  movb $0x00, %ah
+  int  $0x10
+
 load_kernel:
   movw $0x0000, %dx       # bios int 0x13 read data from disk
   movw $0x0003, %cx       # thrid sector
