@@ -1,11 +1,74 @@
 #include "display.h"
 #include "common.h"
 #include "types.h"
+#include "font.h"
 #include "string.h"
 
 volatile u8 cursor_x = 0;
 volatile u8 cursor_y = 0;
-volatile u16 *video_buffer = (volatile u16*)0xB8000;
+volatile u16 *char_buffer = (volatile u16*)0xB8000;
+volatile u8 *video_buffer = (volatile u8*)0xa0000;
+
+static int abs(int a)
+{
+  int temp = (a >> 31); 
+  return (a + temp) ^ temp;
+}
+
+void set_pixel(u16 x, u16 y, u8 color)
+{
+  video_buffer[y*320 +x] = color;
+}
+
+void print_font8(u16 x, u16 y, u8 ch)
+{
+  u16 i,j;
+  for(i=x; i<y+8; i++){
+    for(j=y; j<y+8; j++){
+      if(((font8[ch][j-y]>>(i-x))&0x1) == 1)
+        set_pixel(i,j,0xf);
+    }
+  }
+}
+
+void draw_line(u16 x1, u16 y1, u16 x2, u16 y2, u8 color)
+{
+  int dx = x2 - x1;
+  int dy = y2 - y1;
+  int ux = ((dx > 0) << 1) - 1;//x的增量方向，取或-1
+  int uy = ((dy > 0) << 1) - 1;//y的增量方向，取或-1
+  int x = x1, y = y1, eps;//eps为累加误差
+
+  eps = 0;dx = abs(dx); dy = abs(dy); 
+  if (dx > dy) {
+    for (x = x1; x != x2; x += ux) {
+      set_pixel(x,y,color);
+      eps += dy;
+      if ((eps << 1) >= dx) {
+        y += uy; eps -= dx;
+      }
+    }
+  } else {
+    for (y = y1; y != y2; y += uy) {
+      set_pixel(x,y,color);
+      eps += dx;
+      if ((eps << 1) >= dy) {
+        x += ux; eps -= dy;
+      }
+    }
+  }
+}
+
+void draw_rectangle(u16 x, u16 y, u16 width, u16 hight, u8 color)
+{
+  u16 i,j;
+  for (i=x; i<x+width; i++){
+    for (j=y; j<y+hight; j++){
+      set_pixel(i,j,color);
+    }
+  }
+
+}
 
 static void flush_cursor()
 {
@@ -24,7 +87,7 @@ void flush_line(u8 line)
   u16 blank = 0x20 | (attribute_byte << 8);
   u16 i;
   for (i=0; i<80; i++){
-    video_buffer[line*80+i] = blank;
+    char_buffer[line*80+i] = blank;
   }
   cursor_x = 0;
   flush_cursor();
@@ -36,7 +99,7 @@ void flush_screen()
   u16 blank = 0x20 | (attribute_byte << 8);
   u16 i;
   for (i=0; i<80*25; i++){
-    video_buffer[i] = blank;
+    char_buffer[i] = blank;
   }
   cursor_x = 0;
   cursor_y = 0;
@@ -49,7 +112,7 @@ static void scroll()
     u16 i;
 
     for (i = 0 * 80; i < 24 * 80; i++) {
-      video_buffer[i] = video_buffer[i+80];
+      char_buffer[i] = char_buffer[i+80];
     }
     flush_line(24);
 
@@ -64,7 +127,7 @@ void display_putc(char c, u8 fg, u8 bg)
   if (c == 0x08 && cursor_x) {
     // backspace
     cursor_x--;
-    video_buffer[cursor_y*80 + cursor_x] = ' ' | ((COLOR_WHITE|COLOR_BLACK<<4)<<8);
+    char_buffer[cursor_y*80 + cursor_x] = ' ' | ((COLOR_WHITE|COLOR_BLACK<<4)<<8);
   } else if (c == 0x09) {
     //tab
     cursor_x = (cursor_x+8) & ~(8-1);
@@ -74,7 +137,7 @@ void display_putc(char c, u8 fg, u8 bg)
     cursor_x = 0;
     cursor_y++;
   } else if (c >= ' ') {
-    video_buffer[cursor_y*80 + cursor_x] = c | attribute;
+    char_buffer[cursor_y*80 + cursor_x] = c | attribute;
     cursor_x++;
   }
  
