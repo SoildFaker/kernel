@@ -62,9 +62,9 @@ void pmm_free_page(u32 p)
 
 u32 kmalloc_attr(u32 size, u8 align, u32* phys)
 {
-  memory_header_t *header = (memory_header_t *)placement_address;
-  header->used = 1;
-  placement_address += sizeof(memory_header_t);
+  //memory_header_t *header = (memory_header_t *)placement_address;
+  //header->used = 1;
+  //placement_address += sizeof(memory_header_t);
 
   if (align == 1 && (placement_address & PAGE_MASK)!=placement_address){
     placement_address &= PAGE_MASK;

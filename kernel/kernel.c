@@ -23,6 +23,12 @@ void kmain()
 
   show_memory_map();
   init_pmm();
+  print_font8(10,40,1);
+  print_font8(10,30,2);
+  print_font8(10,10,5);
+  print_font8(10,20,6);
+  /*draw_line(0,0,50,50,0xf);;*/
+  draw_rectangle(100,100, 60, 60, 0xf);
 
   kprint_color(COLOR_BROWN, COLOR_BLACK, "\nThe Count of Physical Memory Page is: % u\n\n", phy_page_count);
   
