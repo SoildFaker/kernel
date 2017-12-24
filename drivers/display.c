@@ -1,6 +1,5 @@
 #include "display.h"
 #include "common.h"
-#include "types.h"
 #include "font.h"
 #include "string.h"
 
