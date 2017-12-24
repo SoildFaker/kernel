@@ -33,9 +33,9 @@ struct page_entry {
 typedef struct page_entry page_entry_t;
 
 void switch_pgd(u32 pd);
-void map(page_entry_t *pgd_now, u32 va, u32 pa, u32 flags);
-void unmap(page_entry_t *pgd_now, u32 va);
-u32 get_mapping(page_entry_t *pgd_now, u32 va, u32 *pa);
+void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags);
+void unmap(page_entry_t *pdt_now, u32 va);
+u32 get_mapping(page_entry_t *pdt_now, u32 va, u32 *pa);
 void flush_page_directory(page_entry_t *directory);
 void enable_page();
 void init_page();
