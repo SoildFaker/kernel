@@ -1,4 +1,5 @@
-# kernel
+# A-MINI-KERNEL
+
 TODO:
  - [x] Bootloader
  - [x] Protected Mode
