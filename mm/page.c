@@ -54,56 +54,45 @@ void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
     pdt_now[pdt_idx].base = (u32)pet_now;
     pdt_now[pdt_idx].flags = PG_PRESENT | PG_WRITE;
     
-    // 转换到内核线性地址并清 0
-    pte = (page_entry_t *)((u32)pte + PAGE_OFFSET);
-    bzero(pte, PAGE_SIZE);
-  } else {
-    // 转换到内核线性地址
-    pte = (page_entry_t *)((u32)pte + PAGE_OFFSET);
   }
   
-  pte[pte_idx] = (pa & PAGE_MASK) | flags;
+  pet_now[pet_idx].base = (pa & PAGE_MASK);
+  pet_now[pet_idx].flags = flags;
   
   // 通知 CPU 更新页表缓存
   asm volatile ("invlpg (%0)" : : "a" (va));
 }
 
-void unmap(page_entry_t *pgd_now, u32 va)
+void unmap(page_entry_t *pdt_now, u32 va)
 {
-  u32 pgd_idx = PGD_INDEX(va);
-  u32 pte_idx = PTE_INDEX(va);
+  u32 pdt_idx = PGD_INDEX(va);
+  u32 pet_idx = PTE_INDEX(va);
   
-  page_entry_t *pte = (page_entry_t *)(pgd_now[pgd_idx] & PAGE_MASK);
+  page_entry_t *pet_now = (page_entry_t *)(pdt_now[pdt_idx].base);
   
-  if (!pte) {
+  if (!pet_now) {
     return;
   }
   
-  // 转换到内核线性地址
-  pte = (page_entry_t *)((u32)pte + PAGE_OFFSET);
-  
-  pte[pte_idx] = 0;
+  pet_now[pet_idx].flags = 0;
   
   // 通知 CPU 更新页表缓存
   asm volatile ("invlpg (%0)" : : "a" (va));
 }
 
-u32 get_mapping(page_entry_t *pgd_now, u32 va, u32 *pa)
+u32 get_mapping(page_entry_t *pdt_now, u32 va, u32 *pa)
 {
-  u32 pgd_idx = PGD_INDEX(va);
-  u32 pte_idx = PTE_INDEX(va);
+  u32 pdt_idx = PGD_INDEX(va);
+  u32 pet_idx = PTE_INDEX(va);
   
-  page_entry_t *pte = (page_entry_t *)(pgd_now[pgd_idx] & PAGE_MASK);
-  if (!pte) {
+  page_entry_t *pet_now = (page_entry_t *)(pdt_now[pdt_idx].base);
+  if (!pet_now) {
     return 0;
   }
 
-  // 转换到内核线性地址
-  pte = (pte_t *)((u32)pte + PAGE_OFFSET);
-  
   // 如果地址有效而且指针不为，则返回地址NULL
-  if (pte[pte_idx] != 0 && pa) {
-    *pa = pte[pte_idx] & PAGE_MASK;
+  if (pet_now[pet_idx].flags != 0 && pa) {
+    *pa = pet_now[pet_idx].base;
     return 1;
   }
 
