@@ -1,7 +1,7 @@
 #ifndef __DISPLAY__
 #define __DISPLAY__
 
-#include "types.h"
+#include "common.h"
 
 #define COLOR_BLACK  0
 #define COLOR_BLUE  1
