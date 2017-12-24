@@ -12,10 +12,9 @@
     while(1) ;                                   \
   }                                              \
 
-struct list {
-  struct list *next;
-  struct list *prev;
-};
+typedef unsigned char  u8;
+typedef unsigned short u16;
+typedef unsigned long  u32;
 
 /* Basic port I/O */
 static inline void outb(u8 v, u16 port)
