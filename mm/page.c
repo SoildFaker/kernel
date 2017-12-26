@@ -4,31 +4,26 @@
 #include "display.h"
 #include "tools.h"
 
-page_entry_t kpdt[KPDT_COUNT] __attribute__((aligned(PAGE_SIZE)));
+page_entry_t kpdt[1024] __attribute__((aligned(PAGE_SIZE)));
 static page_entry_t pet[KPDT_COUNT][1024] __attribute__((aligned(PAGE_SIZE)));
 
 void init_page()
 {
-  u32 address = ((u32)kernel_start & PAGE_MASK) - 0x1000;
-  u32 pdt_idx;
-  u32 pet_idx;
+  /*u32 address = ((u32)kernel_start & PAGE_MASK) - 0x1000;*/
+  u32 address = 0;
   while (address < (((u32)kernel_end & PAGE_MASK) + 0x1000)){
-    pdt_idx = PDT_INDEX(address);
-    pet_idx = PET_INDEX(address);
-    pet[pdt_idx][pet_idx].base = address >> 12;
-    pet[pdt_idx][pet_idx].flags = PG_PRESENT | PG_WRITE;
-    kprint("%x/%x\n", PDT_INDEX(pdt_idx), pdt_idx);
+    (*pet+PET_INDEX(address))->base  = address >> 12;
+    (*pet+PET_INDEX(address))->flags = PG_PRESENT | PG_WRITE;
     address += PAGE_SIZE;
-    kprint("%x/%x\n", PDT_INDEX(pdt_idx), pdt_idx);
-    if (PDT_INDEX(address) != pdt_idx){
-      kprint("%x", pdt_idx);
-      kpdt[pdt_idx].base = (u32)pet[pdt_idx] >> 12;
-      kpdt[pdt_idx].flags = PG_PRESENT | PG_WRITE;
-    }
+  }
+  u32 i;
+  for (i=0; i<KPDT_COUNT; i++){
+    kpdt[i].base = (u32)pet[i] >> 12;
+    kpdt[i].flags = PG_PRESENT | PG_WRITE;
   }
   register_interrupt_handler(14, (interrupt_handler_t)page_fault);
 
-  flush_page_directory(kpdt);
+  switch_pdt(kpdt);
   enable_page();
 }
 
@@ -86,13 +81,9 @@ u32 get_mapping(page_entry_t *pdt_now, u32 va, u32 *pa)
   return 0;
 }
 
-void switch_pgd(u32 pd)
+void switch_pdt(page_entry_t *pdt)
 {
-  asm volatile ("mov %0, %%cr3" : : "r" (pd));
-}
-
-void flush_page_directory(page_entry_t *pgdir) {
-  asm volatile("mov %%eax, %%cr3":: "a"(pgdir));    // put page table addr
+  asm volatile ("mov %0, %%cr3" :: "r"(pdt));   // put page table addr
 }
 
 void enable_page() {
