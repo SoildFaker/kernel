@@ -6,11 +6,10 @@
 
 page_entry_t kpdt[1024] __attribute__((aligned(PAGE_SIZE)));
 static page_entry_t pet[KPDT_COUNT][1024] __attribute__((aligned(PAGE_SIZE)));
-
+u32 address = 0;
 void init_page()
 {
   /*u32 address = ((u32)kernel_start & PAGE_MASK) - 0x1000;*/
-  u32 address = 0;
   while (address < (((u32)kernel_end & PAGE_MASK) + 0x1000)){
     (*pet+PET_INDEX(address))->base  = address >> 12;
     (*pet+PET_INDEX(address))->flags = PG_PRESENT | PG_WRITE;
@@ -34,7 +33,9 @@ void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
   page_entry_t *pet_now;
   // if the PET not present
   if ((pdt_now[pdt_idx].flags & 0x01) == 0){
-    pet_now = (page_entry_t *)pmm_alloc_page();
+    /*pet_now = (page_entry_t *)pmm_alloc_page();*/
+    pet_now = (page_entry_t *)pet+(address>>12);
+    address += PAGE_SIZE;
     pdt_now[pdt_idx].base = (u32)pet_now >> 12;
     pdt_now[pdt_idx].flags = PG_PRESENT | PG_WRITE;
   } else {
@@ -43,6 +44,8 @@ void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
   pet_now[pet_idx].base = (pa >> 12);
   pet_now[pet_idx].flags = flags;
   // 通知 CPU 更新页表缓存
+  kprint("pdt[%x]=%x\n", pdt_idx,  pdt_now[pdt_idx].base);
+  kprint("pet[%x]=%x\n", pet_idx, ((page_entry_t *)((u32)pdt_now[pdt_idx].base<<12))[pet_idx].base);
   asm volatile ("invlpg (%0)" : : "a" (va));
 }
 
