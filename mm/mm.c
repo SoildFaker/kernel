@@ -1,15 +1,26 @@
 #include "mm.h"
 #include "tools.h"
+#include "page.h"
 #include "init.h"
 
 mmap_entry_t *mmap = (mmap_entry_t *)0x1000;
 u32 *count = (u32 *)0x500;
 
+memory_header_t *heap_first;
+// 申请内存块
+static void alloc_chunk(u32 start, u32 len);
+
+static void free_chunk(memory_header_t *chunk);
+
+static void split_chunk(memory_header_t *chunk, u32 len);
+
+static void glue_chunk(memory_header_t *chunk);
+
+static u32 heap_max = HEAP_START;
+
 static u32 *pmm_stack;
 static u32 pmm_stack_top = 0;
 u32 phy_page_count;
-
-u32 placement_address = (u32)kernel_end;
 
 void show_memory_map()
 {
@@ -60,40 +71,123 @@ void pmm_free_page(u32 p)
   pmm_stack[++pmm_stack_top] = p;
 }
 
-u32 kmalloc_attr(u32 size, u8 align, u32* phys)
+void *kmalloc(u32 len)
 {
-  //memory_header_t *header = (memory_header_t *)placement_address;
-  //header->used = 1;
-  //placement_address += sizeof(memory_header_t);
+  len += sizeof(memory_header_t);
+  memory_header_t *header_cur = heap_first;
+  memory_header_t *header_prev = 0;
 
-  if (align == 1 && (placement_address & PAGE_MASK)!=placement_address){
-    placement_address &= PAGE_MASK;
-    placement_address += PAGE_SIZE;
+  while (header_cur){
+    if (header_cur->allocated == 0 && header_cur->length >= len){
+      // Split memory by length
+      split_chunk(header_cur, len);
+      header_cur->allocated = 1;
+      // return memory address memory header is ahead of memory chunk
+      return (void *)((u32)header_cur + sizeof(memory_header_t));
+    }
+    header_prev = header_cur;
+    header_cur = header_cur->next;
   }
-  if(phys){
-    *phys = placement_address;
+
+  u32 chunk_start;
+
+  if (header_prev){
+    chunk_start = (u32)header_prev + header_prev->length;
+  } else {
+    chunk_start = HEAP_START;
+    heap_first = (memory_header_t *)chunk_start;
   }
-  u32 temp = placement_address;
-  placement_address += size;
-  return temp;
+  // need for a new page?
+  alloc_chunk(chunk_start , len);
+  header_cur = (memory_header_t *)chunk_start;
+  header_cur->prev = header_prev;
+  header_cur->next = 0;
+  header_cur->allocated = 1;
+  header_cur->length = len;
+  
+  if (header_prev) {
+    header_prev->next = header_cur;
+  }
+  
+  return (void*)(chunk_start + sizeof(memory_header_t));
 }
 
-u32 kmalloc_a(u32 size)
+void kfree(void *p)
 {
-  return kmalloc_attr(size, 1, 0);
+  // 指针回退到管理结构，并将已使用标记置 0
+  memory_header_t *header = (memory_header_t*)((u32)p - sizeof(memory_header_t));
+  header->allocated = 0;
+  
+  // 粘合内存块
+  glue_chunk(header);
 }
 
-u32 kmalloc_p(u32 size, u32 *phys)
+void alloc_chunk(u32 start, u32 len)
 {
-  return kmalloc_attr(size, 0, phys);
+  // 如果当前堆的位置已经到达界限则申请内存页
+  // 必须循环申请内存页直到有到足够的可用内存
+  while (start + len > heap_max) {
+    /*u32 page = pmm_alloc_page();*/
+    /*map(pgd_kern, heap_max, page, PAGE_PRESENT | PAGE_WRITE);*/
+    heap_max += PAGE_SIZE;
+  }
 }
 
-u32 kmalloc_ap(u32 size, u32 *phys)
+void free_chunk(memory_header_t *chunk)
 {
-  return kmalloc_attr(size, 1, phys);
+  if (chunk->prev == 0) {
+    heap_first = 0;
+  } else {
+  chunk->prev->next = 0;
+  }
+  
+  // 空闲的内存超过 1 页的话就释放掉
+  while ((heap_max - PAGE_SIZE) >= (u32)chunk) {
+    heap_max -= PAGE_SIZE;
+    u32 page;
+    /*get_mapping(pgd_kern, heap_max, &page);*/
+    /*unmap(pgd_kern, heap_max);*/
+    pmm_free_page(page);
+  }
 }
 
-u32 kmalloc(u32 size)
+void split_chunk(memory_header_t *chunk, u32 len)
 {
-  return kmalloc_attr(size, 0, 0);
+// 切分内存块之前得保证之后的剩余内存至少容纳一个内存管理块的大小
+  if (chunk->length - len > sizeof (memory_header_t)) {
+    memory_header_t *newchunk = (memory_header_t *)((u32)chunk + chunk->length);
+    newchunk->prev = chunk;
+    newchunk->next = chunk->next;
+    newchunk->allocated = 0;
+    newchunk->length = chunk->length - len;
+    
+    chunk->next = newchunk;
+    chunk->length = len;
+  }
+}
+
+void glue_chunk(memory_header_t *chunk)
+{
+  // 如果该内存块前面有链内存块且未被使用则拼合
+  if (chunk->next && chunk->next->allocated == 0) {
+    chunk->length = chunk->length + chunk->next->length;
+    if (chunk->next->next) {
+      chunk->next->next->prev = chunk;
+    }
+    chunk->next = chunk->next->next;
+  }
+  
+  if (chunk->prev && chunk->prev->allocated == 0) {
+    chunk->prev->length = chunk->prev->length + chunk->length;
+    chunk->prev->next = chunk->next;
+    if (chunk->next) {
+      chunk->next->prev = chunk->prev;
+    }
+    chunk = chunk->prev;
+  }
+    
+  // 假如该内存后面没有链表内存块了直接释放掉
+  if (chunk->next == 0) {
+    free_chunk(chunk);
+  }
 }
