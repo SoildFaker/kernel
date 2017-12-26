@@ -1,11 +1,12 @@
 #ifndef __MM__
 #define __MM__
 
-#include "types.h"
+#include "common.h"
 #include "page.h"
 
 // stack size of thread
 #define STACK_SIZE      8192
+#define HEAP_START      0xe0000000
 // max memory
 #define MEMORY_SIZE     0x08000000
 #define PAGE_MAX_NUM    (MEMORY_SIZE/PAGE_SIZE)
@@ -20,9 +21,12 @@ struct mmap_entry {
 typedef struct mmap_entry mmap_entry_t;
 
 struct memory_header {
-  u8 used;
   struct memory_header *next;
+  struct memory_header *prev;
+  u32 allocated :1;
+  u32 length    :31;
 };
+typedef struct memory_header memory_header_t;
 
 extern u8 kernel_start[];
 extern u8 kernel_end[];
@@ -38,10 +42,9 @@ void show_memory_map();
 void pmm_free_page(u32 p);
 u32 pmm_alloc_page();
 
-u32 kmalloc_attr(u32 size, u8 align, u32* phys);
-u32 kmalloc_a(u32 size);
-u32 kmalloc_p(u32 size, u32 *phys);
-u32 kmalloc_ap(u32 size, u32 *phys);
-u32 kmalloc(u32 size);
+// 内存申请
+void *kmalloc(u32 len);
 
+// 内存释放
+void kfree(void *p);
 #endif
