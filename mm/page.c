@@ -10,6 +10,9 @@ u32 address = 0;
 void init_page()
 {
   /*u32 address = ((u32)kernel_start & PAGE_MASK) - 0x1000;*/
+  // TODO : BUG here 
+  // PET_INDEX(address) only in range (0, 3FF)
+  // next time fix it 
   while (address < (((u32)kernel_end & PAGE_MASK) + 0x1000)){
     (*pet+PET_INDEX(address))->base  = address >> 12;
     (*pet+PET_INDEX(address))->flags = PG_PRESENT | PG_WRITE;
@@ -34,6 +37,9 @@ void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
   // if the PET not present
   if ((pdt_now[pdt_idx].flags & 0x01) == 0){
     /*pet_now = (page_entry_t *)pmm_alloc_page();*/
+    // TODO : edit here for new PET store address
+    // using kernel PET now 
+    // so find a best and elegent way to alloc mem space for PET
     pet_now = (page_entry_t *)pet+(address>>12);
     address += PAGE_SIZE;
     pdt_now[pdt_idx].base = (u32)pet_now >> 12;
