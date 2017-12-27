@@ -7,6 +7,8 @@
 page_entry_t kpdt[1024] __attribute__((aligned(PAGE_SIZE)));
 static page_entry_t pet[KPDT_COUNT][1024] __attribute__((aligned(PAGE_SIZE)));
 
+// TODO : the following function seems to be not efficient
+// next time fix it
 static page_entry_t *unused_page()
 {
   u32 i,j;
