@@ -6,16 +6,30 @@
 
 page_entry_t kpdt[1024] __attribute__((aligned(PAGE_SIZE)));
 static page_entry_t pet[KPDT_COUNT][1024] __attribute__((aligned(PAGE_SIZE)));
-u32 address = 0;
+
+static page_entry_t *unused_page()
+{
+  u32 i,j;
+  for (i=0; i<1024; i++){
+    page_entry_t *pet_cur = (page_entry_t *)((u32)kpdt[i].base<<12);
+    if(pet_cur){
+      for (j=0; j<1024; j++){
+        if (pet_cur[j].flags == 0){
+          return &pet_cur[j];
+        }
+      }
+    }
+  }
+  return 0;
+}
+
 void init_page()
 {
+  u32 address = 0;
   /*u32 address = ((u32)kernel_start & PAGE_MASK) - 0x1000;*/
-  // TODO : BUG here 
-  // PET_INDEX(address) only in range (0, 3FF)
-  // next time fix it 
   while (address < (((u32)kernel_end & PAGE_MASK) + 0x1000)){
-    (*pet+PET_INDEX(address))->base  = address >> 12;
-    (*pet+PET_INDEX(address))->flags = PG_PRESENT | PG_WRITE;
+    (*pet+(address>>12))->base  = address >> 12;
+    (*pet+(address>>12))->flags = PG_PRESENT | PG_WRITE;
     address += PAGE_SIZE;
   }
   u32 i;
@@ -34,24 +48,27 @@ void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
   u32 pdt_idx = PDT_INDEX(va);
   u32 pet_idx = PET_INDEX(va);
   page_entry_t *pet_now;
+
+  pet_now = (page_entry_t *)((u32)pdt_now[pdt_idx].base << 12);
   // if the PET not present
-  if ((pdt_now[pdt_idx].flags & 0x01) == 0){
-    /*pet_now = (page_entry_t *)pmm_alloc_page();*/
-    // TODO : edit here for new PET store address
-    // using kernel PET now 
-    // so find a best and elegent way to alloc mem space for PET
-    pet_now = (page_entry_t *)pet+(address>>12);
-    address += PAGE_SIZE;
-    pdt_now[pdt_idx].base = (u32)pet_now >> 12;
+  /*if ((pdt_now[pdt_idx].flags & 0x01) == 0){*/
+  if (!pet_now){
+    u32 new_pet_addr = pmm_alloc_page();
+    // find an existed PET entry for new page
+    page_entry_t *new_page = unused_page();
+    new_page->base = new_pet_addr >> 12;
+    new_page->flags = PG_PRESENT | PG_WRITE;
+
+    // PDT entry point to the PET contained new_page
+    pdt_now[pdt_idx].base = (u32)new_page >> 12;
     pdt_now[pdt_idx].flags = PG_PRESENT | PG_WRITE;
-  } else {
-    pet_now = (page_entry_t *)((u32)pdt_now[pdt_idx].base << 12);
+
+    // pet_now entry point to new page
+    pet_now = (page_entry_t *)((u32)new_page & PAGE_MASK);
   }
   pet_now[pet_idx].base = (pa >> 12);
   pet_now[pet_idx].flags = flags;
   // 通知 CPU 更新页表缓存
-  kprint("pdt[%x]=%x\n", pdt_idx,  pdt_now[pdt_idx].base);
-  kprint("pet[%x]=%x\n", pet_idx, ((page_entry_t *)((u32)pdt_now[pdt_idx].base<<12))[pet_idx].base);
   asm volatile ("invlpg (%0)" : : "a" (va));
 }
 
