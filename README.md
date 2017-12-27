@@ -6,7 +6,7 @@ TODO:
  - [x] GDT INIT
  - [x] IDT INIT
  - [x] PAGING
- - [ ] MEMORY MANAGEMENT
+ - [x] MEMORY MANAGEMENT
  - [ ] TASK
  - [ ] DEV
  - [ ] FS
