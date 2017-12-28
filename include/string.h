@@ -1,7 +1,7 @@
 #ifndef INCLUDE_STRING_H_
 #define INCLUDE_STRING_H_
 
-#include "types.h"
+#include "common.h"
 #include "display.h"
 
 void memcpy(u8 *dest, const u8 *src, u32 len);

@@ -1,7 +1,7 @@
 #ifndef __TOOLS__
 #define __TOOLS__ 
 
-#include "types.h"
+#include "common.h"
 #include "display.h"
 
 typedef __builtin_va_list va_list;

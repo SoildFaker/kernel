@@ -1,7 +1,7 @@
 #ifndef __TIMER__
 #define __TIMER__
 
-#include "types.h"
+#include "common.h"
 
 void init_timer(u32 frequency);
 

@@ -1,22 +1,5 @@
 .code32
 
-.global load_test_a
-load_test_a:
-  movl  4(%esp), %eax # current env pointer
-
-  movl  4(%eax), %esp
-  movl  8(%eax), %ebp
-  movl 12(%eax), %ebx
-  movl 16(%eax), %ecx
-  movl 20(%eax), %edx
-  movl 24(%eax), %esi
-  movl 28(%eax), %edi
-  push 32(%eax)
-  # push %eax
-  popf
-  push (%eax)
-  ret
- 
 .global switch_task
 switch_task:
 # save current content

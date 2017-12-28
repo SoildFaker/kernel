@@ -1,4 +1,3 @@
-#include <types.h>
 // common.h -- Defines typedefs and some global functions.
 //             From JamesM's kernel development tutorials.
 
@@ -15,6 +14,8 @@
 typedef unsigned char  u8;
 typedef unsigned short u16;
 typedef unsigned long  u32;
+
+#define NULL 0
 
 /* Basic port I/O */
 static inline void outb(u8 v, u16 port)

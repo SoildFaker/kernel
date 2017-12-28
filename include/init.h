@@ -1,7 +1,7 @@
 #ifndef __INIT__
 #define __INIT__
 
-#include "types.h"
+#include "common.h"
 
 #define G_32    0xcf
 #define G_16    0x0f
@@ -99,7 +99,7 @@ struct call_gate_struct
 };
 typedef struct call_gate_struct call_gate_t;
 
-extern u32 stack[1280];
+extern u32 kstack[2048];
 // These extern directives let us access the addresses of our ASM ISR handlers.
 extern void gdt_flush(u32);
 extern void idt_flush(u32);
