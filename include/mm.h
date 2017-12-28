@@ -5,10 +5,10 @@
 #include "page.h"
 
 // stack size of thread
-#define STACK_SIZE      8192
-#define HEAP_START      0xe0000000
+#define STACK_SIZE      2048
+#define HEAP_START      0xE0000000
 // max memory
-#define MEMORY_SIZE     0x08000000
+#define MEMORY_SIZE     0x04000000
 #define PAGE_MAX_NUM    (MEMORY_SIZE/PAGE_SIZE)
 
 struct mmap_entry {
@@ -28,6 +28,9 @@ struct memory_header {
 };
 typedef struct memory_header memory_header_t;
 
+extern mmap_entry_t *mmap;
+extern u32 *count;
+
 extern u8 kernel_start[];
 extern u8 kernel_end[];
 
@@ -38,7 +41,6 @@ extern u32 *count;
 
 // 初始化物理内存管理
 void init_pmm();
-void show_memory_map();
 void pmm_free_page(u32 p);
 u32 pmm_alloc_page();
 
