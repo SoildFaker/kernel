@@ -53,8 +53,7 @@ void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
 
   pet_now = (page_entry_t *)((u32)pdt_now[pdt_idx].base << 12);
   // if the PET not present
-  /*if ((pdt_now[pdt_idx].flags & 0x01) == 0){*/
-  if (!pet_now){
+  if ((pdt_now[pdt_idx].flags & 0x01) == 0){
     u32 new_pet_addr = pmm_alloc_page();
     // find an existed PET entry for new page
     page_entry_t *new_page = unused_page();
