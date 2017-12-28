@@ -1,4 +1,3 @@
-#include "types.h"
 #include "string.h"
 // Copy len bytes from src to dest.
 inline void memcpy(u8 *dest, const u8 *src, u32 len)

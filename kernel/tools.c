@@ -1,7 +1,6 @@
 #include "tools.h"
 #include "display.h"
 #include "common.h"
-#include "types.h"
 #include "string.h"
 
 void kprint(const char *format, ...)

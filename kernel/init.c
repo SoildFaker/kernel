@@ -1,28 +1,19 @@
-#include <types.h>
-#include <common.h>
-#include <init.h>
-#include <string.h>
-#include <tools.h>
+#include "common.h"
+#include "init.h"
+#include "string.h"
+#include "tools.h"
 
 static void gdt_set_gate(int, u32, u32, u8, u8);
 static void idt_set_gate(u8, u32, u16, u8);
 static void init_gdt();
 static void init_idt();
 
-u32 stack[1280];
+u32 kstack[2048];
 gdt_entry_t gdt_entries[8];
 gdt_ptr_t   gdt_ptr;
 idt_entry_t idt_entries[256];
 idt_ptr_t   idt_ptr;
 interrupt_handler_t interrupt_handlers[256];
-
-static inline void init_stack()
-{
-  // use new stack space
-  asm volatile ("movw $0x18, %ax");
-  asm volatile ("movw %ax, %ss");
-  asm volatile ("movl %0, %%esp"::"a"((u32)&stack+sizeof(stack)));
-}
 
 void init_descriptor_tables()
 {
@@ -30,7 +21,6 @@ void init_descriptor_tables()
   kprint("GDT OK\n");
   init_idt();
   kprint("IDT OK\n");
-  init_stack();
 }
 
 static void gdt_set_gate(
@@ -220,7 +210,7 @@ static void init_gdt()
   gdt_set_gate(0, 0, 0, 0, 0);
   gdt_set_gate(1, 0, 0xffffffff, A_CR, G_32);
   gdt_set_gate(2, 0, 0xffffffff, A_DRW, G_32);
-  gdt_set_gate(3, 0, sizeof(stack), A_DRWA, G_32);
+  gdt_set_gate(3, 0, 0xffffffff, A_DRWA, G_32);
   gdt_set_gate(4, 0, 0xffffffff, A_DPL3|A_CR, G_32);
   gdt_set_gate(5, 0, 0xffffffff, A_DPL3|A_DRW, G_32);
   gdt_set_gate(6, 0, 0xffffffff, A_LDT, G_32);
