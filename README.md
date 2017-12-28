@@ -7,7 +7,7 @@ TODO:
  - [x] IDT INIT
  - [x] PAGING
  - [x] MEMORY MANAGEMENT
- - [ ] TASK
+ - [x] TASK
  - [ ] DEV
  - [ ] FS
  - [ ] SHELLL
