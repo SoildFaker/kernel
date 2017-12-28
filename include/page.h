@@ -13,7 +13,7 @@
 #define  PAGE_SIZE    0x1000
 #define  PAGE_MASK    0xFFFFF000
 
-#define  KPDT_COUNT   0x9
+#define  KPDT_COUNT   4
 #define  KERNV_START  0x100000
 #define  KERNP_START  0x100000
 
@@ -34,11 +34,10 @@ typedef struct page_entry page_entry_t;
 
 extern page_entry_t kpdt[1024];
 
-void switch_pgd(u32 pd);
+void switch_pdt(page_entry_t *pdt);
 void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags);
 void unmap(page_entry_t *pdt_now, u32 va);
 u32 get_mapping(page_entry_t *pdt_now, u32 va, u32 *pa);
-void flush_page_directory(page_entry_t *directory);
 void enable_page();
 void init_page();
 void page_fault(pt_regs *regs);
