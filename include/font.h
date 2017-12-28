@@ -1,7 +1,7 @@
 #ifndef __FONT__
 #define __FONT__
 
-#include "types.h"
+#include "common.h"
 
 #define ________ 0x00
 #define _______X 0x01
