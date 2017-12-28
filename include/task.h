@@ -1,7 +1,17 @@
 #ifndef __TASK__
 #define __TASK__
 
-#include "types.h"
+#include "common.h"
+#include "page.h"
+
+// process state
+typedef
+enum task_state {
+  TASK_UNINIT = 0,    // uninitilized
+  TASK_SLEEPING = 1,
+  TASK_RUNNABLE = 2,  // runnable or running
+  TASK_ZOMBIE = 3,
+} task_state;
 
 struct task_env {
  	u32 eip;
@@ -15,16 +25,32 @@ struct task_env {
 	u32 eflags;
 }__attribute__((packed));
 
+struct mm_struct {
+  page_entry_t *pdt_proc; // 进程页表
+};
+
 struct task_ctl {
-  struct task_env *current_env;
+  volatile task_state state;      // task state
+  u32 pid;
+  void *stack;
+  struct mm_struct *mm;           // task memory space
+  struct task_env context;   // task content
   struct task_ctl *task_next;
 };
 
-struct task_ctl *task_now;
+// schedulable process list
+extern struct task_ctl *running_proc_head;
+extern struct task_ctl *wait_proc_head;
+// current process
+extern struct task_ctl *current;
+// Global pid
+extern u32 pid_now;
+
 extern void switch_task(struct task_env *next, struct task_env *current);
+u32  kthread_start(u32 (*fn)(void *), void *arg);
+void kthread_exit();
 void init_task();
 void schedule();
 void switch_to(struct task_ctl *next);
-void test_a();
-void test_b();
+
 #endif
