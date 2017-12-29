@@ -20,6 +20,16 @@
 #define COLOR_LIGHT_BROWN  14
 #define COLOR_WHITE  15
 
+#define CRT_ADDR_REG 0x3D4   // CRT controller register - Address Register
+#define CRT_DATA_REG 0x3D5   // CRT controller register - Date Register
+#define VBUFFER_START_H 0xC  // Video Buffer Start High 8 bit
+#define VBUFFER_START_L 0xD  // Video Buffer Start Low 8 bit
+#define CURSOR_H 0xE         // Cursor high 8 bit
+#define CURSOR_L 0xF         // Cursor low 8 bit
+
+extern volatile u16 *char_buffer;
+extern u32 buffer_start;
+
 void draw_line(u16 x1, u16 y1, u16 x2, u16 y2, u8 color);
 void draw_rectangle(u16 x, u16 y, u16 width, u16 hight, u8 color);
 void print_font8(u16 x, u16 y, u8 ch);
