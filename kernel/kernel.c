@@ -7,6 +7,7 @@
 #include "mm.h"
 #include "task.h"
 #include "page.h"
+#include "tty.h"
 
 static inline void init_stack()
 {
@@ -36,8 +37,22 @@ u32 test_a(void *arg)
 {
   while(1){
     if (sw == 0){
-      display_putc('A',COLOR_RED, COLOR_BLACK);
+      tty_cur = &tty_2;
+      display_putc('A', COLOR_BLUE, COLOR_BLACK);
       sw = 1;
+    }
+    a++;
+  }
+  return 0;
+}
+
+u32 test_c(void *arg)
+{
+  while(1){
+    if (sw == 3){
+      tty_cur = &tty_2;
+      display_putc('C', COLOR_WHITE, COLOR_BLACK);
+      sw = 0;
     }
     a++;
   }
@@ -48,9 +63,10 @@ u32 test_a(void *arg)
 u32 test_b(void *arg)
 {
   while(1){
-    if (sw == 2){
-      display_putc('B', COLOR_BLUE, COLOR_BLACK);
-      sw = 0;
+    if (sw == 1){
+      tty_cur = &tty_1;
+      display_putc('B', COLOR_RED, COLOR_BLACK);
+      sw = 2;
     }
     a++;
   }
@@ -59,11 +75,13 @@ u32 test_b(void *arg)
 
 void kmain()
 {
+  init_tty();
   flush_screen();
   init_descriptor_tables();
   init_stack();
   init_page();
   init_pmm();
+
   kprint("KERNEL LOADED\n");
   kprint("KERNEL START: %x\n", kernel_start);
   kprint("KERNEL END:   %x\n", kernel_end);
@@ -72,17 +90,20 @@ void kmain()
   show_memory_map();
 
   init_task();
+  kthread_start(tty_task, NULL);
   kthread_start(test_a, NULL);
   kthread_start(test_b, NULL);
-
+  kthread_start(test_c, NULL);
+  
   init_timer(20);
   init_keyboard();
 
   asm volatile("sti");
   while(1){
-    if (sw == 1){
+    if (sw == 2){
+      tty_cur = &tty_1;
       display_putc('K',COLOR_GREEN, COLOR_BLACK);
-      sw = 2;
+      sw = 3;
     }
     a++;
   }
