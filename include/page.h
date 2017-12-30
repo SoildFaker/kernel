@@ -17,11 +17,11 @@
 #define  KERNV_START  0x100000
 #define  KERNP_START  0x100000
 
-// 获取一个地址的页目录项
+// get page directory index
 #define PDT_INDEX(x) (((x) >> 22) & 0x3FF)
-// 获取一个地址的页表项
+// get page entry index
 #define PET_INDEX(x) (((x) >> 12) & 0x3FF)
-// 获取一个地址的页內偏移
+// page aligned address
 #define OFFSET_INDEX(x) ((x) & 0xFFF)
 
 struct page_entry {

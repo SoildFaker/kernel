@@ -1,5 +1,5 @@
-#ifndef INCLUDE_STRING_H_
-#define INCLUDE_STRING_H_
+#ifndef __STRING__
+#define __STRING__
 
 #include "common.h"
 #include "display.h"

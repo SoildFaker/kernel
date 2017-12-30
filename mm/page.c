@@ -69,7 +69,7 @@ void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
   }
   pet_now[pet_idx].base = (pa >> 12);
   pet_now[pet_idx].flags = flags;
-  // 通知 CPU 更新页表缓存
+  // flush CPU page cache
   asm volatile ("invlpg (%0)" : : "a" (va));
 }
 
@@ -85,7 +85,7 @@ void unmap(page_entry_t *pdt_now, u32 va)
   page_entry_t *pet_now = (page_entry_t *)((u32)pdt_now[pdt_idx].base << 12);
   pet_now[pet_idx].flags = 0;
   
-  // 通知 CPU 更新页表缓存
+  // flush CPU page cache
   asm volatile ("invlpg (%0)" : : "a" (va));
 }
 
@@ -120,9 +120,9 @@ void enable_page() {
   asm volatile("mov %0, %%cr0":: "r"(cr0));
 }
 
+// Page Fault handler
 void page_fault(pt_regs *regs)
 {
-  // A page fault has occurred.
   // The faulting address is stored in the CR2 register.
   u32 faulting_address;
   asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
@@ -132,7 +132,7 @@ void page_fault(pt_regs *regs)
   int rw = regs->err_code & 0x2;           // Write operation?
   int us = regs->err_code & 0x4;           // Processor was in user-mode?
   int reserved = regs->err_code & 0x8;     // Overwritten CPU-reserved bits of page entry?
-  //int id = regs->err_code & 0x10;          // Caused by an instruction fetch?
+  //int id = regs->err_code & 0x10;        // Caused by an instruction fetch?
 
   // Output an error message.
   display_print("Page fault! ( ");

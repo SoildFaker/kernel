@@ -34,19 +34,16 @@ extern u32 *count;
 extern u8 kernel_start[];
 extern u8 kernel_end[];
 
-// 动态分配物理内存页的总数
+// memoey page count
 extern u32 phy_page_count;
 extern mmap_entry_t *mmap;
 extern u32 *count;
 
-// 初始化物理内存管理
 void init_pmm();
 void pmm_free_page(u32 p);
 u32 pmm_alloc_page();
 
-// 内存申请
 void *kmalloc(u32 len);
-
-// 内存释放
 void kfree(void *p);
+
 #endif

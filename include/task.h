@@ -26,15 +26,15 @@ struct task_env {
 }__attribute__((packed));
 
 struct mm_struct {
-  page_entry_t *pdt_proc; // 进程页表
+  page_entry_t *pdt_proc; // process's pdt
 };
 
 struct task_ctl {
-  volatile task_state state;      // task state
   u32 pid;
   void *stack;
-  struct mm_struct *mm;           // task memory space
-  struct task_env context;   // task content
+  volatile task_state state;    // task state
+  struct mm_struct *mm;         // task memory space
+  struct task_env context;      // task content
   struct task_ctl *task_next;
 };
 

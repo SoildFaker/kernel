@@ -96,11 +96,11 @@ void *kmalloc(u32 len)
 
 void kfree(void *p)
 {
-  // 指针回退到管理结构，并将已使用标记置 0
+  // relesse header and reset allocated flag
   memory_header_t *header = (memory_header_t*)((u32)p - sizeof(memory_header_t));
   header->allocated = 0;
   
-  // 粘合内存块
+  // glue memory chunk
   glue_chunk(header);
 }
 

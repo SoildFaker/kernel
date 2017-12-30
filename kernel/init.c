@@ -55,33 +55,32 @@ static void idt_set_gate(u8 num, u32 base, u16 sel, u8 flags)
 
 static void init_8259A()
 {
-  // 重新映射 IRQ 表
-  // 两片级联的 Intel 8259A 芯片
-  // 主片端口 0x20 0x21
-  // 从片端口 0xA0 0xA1
+  // remap IRQ table
+  // master port 0x20 0x21
+  // slave port 0xA0 0xA1
 
-  // 初始化主片、从片
+  // init 8259A
   // 0001 0001
   outb(0x11, 0x20);
   outb(0x11, 0xA0);
  
-  // 设置主片 IRQ 从 0x20(32) 号中断开始
+  // set master chip int code start from 0x20(30)
   outb(0x20, 0x21);
  
-  // 设置从片 IRQ 从 0x28(40) 号中断开始
+  // set slave chip int code start from 0x28(40)
   outb(0x28, 0xA1);
  
-  // 设置主片 IR2 引脚连接从片
+  // master chip IR2 pin connected to slave chip
   outb(0x04, 0x21);
  
-  // 告诉从片输出引脚和主片 IR2 号相连
+  // salve chip out pin connected master chip IR2
   outb(0x02, 0xA1);
  
-  // 设置主片和从片按照 8086 的方式工作
+  // work mode 8086
   outb(0x01, 0x21);
   outb(0x01, 0xA1);
  
-  // 设置主从片不允许中断
+  // stop int
   outb(0xFF, 0x21);
   outb(0xFF, 0xA1);
 }
@@ -145,7 +144,7 @@ static void init_idt()
   idt_set_gate(46, (u32)irq14, 0x08, 0x8E);
   idt_set_gate(47, (u32)irq15, 0x08, 0x8E);
 
-  // 255 将来用于实现系统调用
+  // no.255 for syscall
   idt_set_gate(255, (u32)isr255, 0x08, 0x8E);
   idt_flush((u32)&idt_ptr);
 }
@@ -155,17 +154,15 @@ void register_interrupt_handler(u8 n, interrupt_handler_t h)
 	interrupt_handlers[n] = h;
 }
 
-// IRQ 处理函数
-// 发送中断结束信号给 PICs
-// 按照我们的设置，从 32 号中断起为用户自定义中断
-// 因为单片的 Intel 8259A 芯片只能处理 8 级中断
-// 故大于等于 40 的中断号是由从片处理的
+// send interrupt reset to PICs
+// for Intel 8259A chip every chip handled 8 level of interrupt
+// so int code over 40 handled by slave chip
 void irq_eoi(u32 nr)
 {
-  // 发送重设信号给主片
+  // send reset signal to master chip
   outb(0x20, 0x20);
   if(nr >= 40) {
-    // 发送重设信号给从片
+    // send reset to slave chip
     outb(0x20, 0xA0);
   }
 }
@@ -187,17 +184,6 @@ void irq_handler(pt_regs *regs)
   if(handler){
     handler(regs);
   }else{
-    kprint_color(COLOR_BLUE, COLOR_BLACK, "INT: %d NO HANDLER\n", regs->int_no);
-  }
-}
-
-/*void isr_handler(u32 esp)*/
-void isr_handler(pt_regs *regs)
-{
-  /*pt_regs *regs = (pt_regs *)((u32)&stack+esp);*/
-  if (interrupt_handlers[regs->int_no]) {
-    interrupt_handlers[regs->int_no](regs);
-  } else {
     kprint_color(COLOR_BLUE, COLOR_BLACK, "INT: %d NO HANDLER\n", regs->int_no);
   }
 }

@@ -28,9 +28,6 @@ void init_task()
 void schedule()
 {
   if (current){
-    /*kprint("-------------\n");*/
-    /*kprint("%x\n", (current->context.eip));*/
-    /*kprint("%x\n", (current->task_next->context.eip));*/
     switch_to(current->task_next);
   }
 }
@@ -51,9 +48,6 @@ u32 kthread_start(u32 (*fn)(void *), void *arg)
   u32 *pstack = (u32 *)kmalloc(STACK_SIZE);
   /*assert(new_task != NULL, "kern_thread: kmalloc error");*/
 
-  // 将栈低端结构信息初始化为 0
-  /*memset(new_task, 0, sizeof(struct task_ctl));*/
-
   new_task->state = TASK_RUNNABLE;
   new_task->stack = pstack;
   new_task->pid = pid_now++;
@@ -67,8 +61,8 @@ u32 kthread_start(u32 (*fn)(void *), void *arg)
 
   new_task->context.esp = (u32)(stack_top - sizeof(u32)*3);
   new_task->context.eip = (u32)fn;
-  new_task->context.ecx = 0;
-  // 设置新任务的标志寄存器未屏蔽中断，很重要
+  /*new_task->context.ecx = 0;*/
+  // let task's eflags = 0x2000 (enable interrupt)
   new_task->context.eflags = 0x200;
 
   new_task->task_next = current;
@@ -79,7 +73,7 @@ u32 kthread_start(u32 (*fn)(void *), void *arg)
     /*current = new_task;*/
   /*}*/
 
-  // 找到当前进任务队列，插入到末尾
+  // insert new task to tasklist's tail
   /*struct task_ctl *tail = running_proc_head;*/
   struct task_ctl *tail = current;
   /*assert(tail != NULL, "Must init sched!");*/
