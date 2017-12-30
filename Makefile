@@ -45,6 +45,9 @@ $(OUTDIR)/boot.bin: $(BTLDOBJ)
 $(OUTDIR)/loader.bin: $(BTLDOBJ)
 	$(LD) -Ttext 0x8000 $(LDFLAGS) $(OUTDIR)/loader.o -o $(OUTDIR)/loader.bin
 
+mkfs:
+	$(CC) tools/mkfs.c -o mkfs_kernel
+
 $(OUTDIR)/%.o: $(KNLDIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(GCFLAGS) -c $< -o $@
