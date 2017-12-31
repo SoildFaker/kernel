@@ -4,51 +4,47 @@ LD = ld
 
 INCLUDE = -I./include
 
+DISKIMG = ./80m.img
 OUTDIR = bin
 KNLDIR = kernel
 DRIVERDIR = drivers
 MMDIR = mm
-BTLDDIR = boot
+BTLDIR = boot
 
-KNLSRC = $(wildcard $(KNLDIR)/*.c) $(wildcard drivers/*.c) 
-KNLSRC += $(wildcard $(MMDIR)/*.c)
+KNL_SRC = $(wildcard $(KNLDIR)/*.c) $(wildcard drivers/*.c) 
+KNL_SRC += $(wildcard $(MMDIR)/*.c)
+KNL_ASM = $(wildcard $(KNLDIR)/*.s)
 
-KNLASM = $(wildcard $(KNLDIR)/*.s)
-# We need head.o be placed ahead, so filter out here
-KNLASM := $(filter-out head.s, $(KNLASM))
-#KNLSRC := $(filter-out kernel.c, $(KNLSRC))
-BTLDASM = $(wildcard $(BTLDDIR)/*.s)
+KNL_OBJ := $(addprefix $(OUTDIR)/,$(notdir $(KNL_SRC:.c=.o)))
+KNL_OBJ += $(addprefix $(OUTDIR)/,$(notdir $(KNL_ASM:.s=.o)))
 
-KNLOBJ := $(addprefix $(OUTDIR)/,$(notdir $(KNLSRC:.c=.o)))
-KNLOBJ += $(addprefix $(OUTDIR)/,$(notdir $(KNLASM:.s=.o)))
-BTLDOBJ = $(addprefix $(OUTDIR)/,$(notdir $(BTLDASM:.s=.o)))
-
-LSCRIPT = link.ld
+KNL_LD = tools/kernel_link.ld
+BTL_LD = tools/loader_link.ld
 
 GCFLAGS = -c -g -Os -m32 -ffreestanding -Wall -Werror -fno-pie
 GCFLAGS += $(INCLUDE) -fno-stack-protector
 ASFLAGS = --32
-LDFLAGS = -static -nostdlib --nmagic --oformat=binary -melf_i386 
+KNL_LDFLAGS = -static -nostdlib --nmagic -melf_i386 
+BTL_LDFLAGS = -static -nostdlib --nmagic --oformat=binary -melf_i386 
 
-all:clean $(OUTDIR)/boot.bin $(OUTDIR)/loader.bin $(OUTDIR)/kernel.bin dd test
+all:clean $(OUTDIR)/boot.bin $(OUTDIR)/loader.bin $(OUTDIR)/kernel.elf dd test
 
 clean:
 	rm -rf $(OUTDIR)
 
-$(OUTDIR)/kernel.bin: $(KNLOBJ)
-	$(LD) -T$(LSCRIPT) $(LDFLAGS) $(OUTDIR)/head.o $(KNLOBJ) -o $(OUTDIR)/kernel.bin
-	#objcopy -O binary $(OUTDIR)/kernel.elf $(OUTDIR)/kernel.bin
+$(OUTDIR)/kernel.elf: $(KNL_OBJ)
+	$(LD) -T$(KNL_LD) $(KNL_LDFLAGS) $(KNL_OBJ) -o $(OUTDIR)/kernel.elf
 
-$(OUTDIR)/boot.bin: $(BTLDOBJ)
+$(OUTDIR)/loader.bin: $(OUTDIR)/loaderasm.o $(OUTDIR)/loadermain.o
+	$(LD) -T$(BTL_LD) $(BTL_LDFLAGS) $(OUTDIR)/loaderasm.o $(OUTDIR)/loadermain.o -o $(OUTDIR)/loader.bin
+
+$(OUTDIR)/boot.bin: $(OUTDIR)/boot.o
 	$(LD) -Ttext 0x7c00 --oformat=binary $(OUTDIR)/boot.o -o $(OUTDIR)/boot.bin
-
-$(OUTDIR)/loader.bin: $(BTLDOBJ)
-	$(LD) -Ttext 0x8000 $(LDFLAGS) $(OUTDIR)/loader.o -o $(OUTDIR)/loader.bin
 
 mkfs:
 	$(CC) tools/mkfs.c -o mkfs_kernel
 
-$(OUTDIR)/%.o: $(KNLDIR)/%.c
+$(OUTDIR)/%.o: $(KNLDIR)/%.c 
 	@mkdir -p $(dir $@)
 	$(CC) $(GCFLAGS) -c $< -o $@
 
@@ -64,18 +60,22 @@ $(OUTDIR)/%.o: $(KNLDIR)/%.s
 	@mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) $< -o $@
 
-$(OUTDIR)/loader.o: $(BTLDDIR)/loader.s
+$(OUTDIR)/loadermain.o: $(BTLDIR)/loadermain.c
 	@mkdir -p $(dir $@)
-	$(AS) $(ASFLAGS) $< -o $@
+	$(CC) $(GCFLAGS) -c $< -o $@
 
-$(OUTDIR)/boot.o: $(BTLDDIR)/boot.s
+$(OUTDIR)/boot.o: $(BTLDIR)/boot.s
 	@mkdir -p $(dir $@)
 	$(AS) $< -o $@
 
+$(OUTDIR)/loaderasm.o: $(BTLDIR)/loaderasm.s
+	@mkdir -p $(dir $@)
+	$(AS) $(ASFLAGS) $< -o $@
+
 dd:
-	dd if=./$(OUTDIR)/boot.bin of=./floppy.img obs=512 count=1 conv=notrunc
-	dd if=./$(OUTDIR)/loader.bin of=./floppy.img obs=512 seek=1 count=1 conv=notrunc
-	dd if=./$(OUTDIR)/kernel.bin of=./floppy.img obs=512 seek=2 conv=notrunc
+	dd if=./$(OUTDIR)/boot.bin of=$(DISKIMG) obs=512 count=1 conv=notrunc
+	dd if=./$(OUTDIR)/loader.bin of=$(DISKIMG) obs=512 seek=1 conv=notrunc
+	dd if=./$(OUTDIR)/kernel.elf of=$(DISKIMG) obs=512 seek=3 conv=notrunc
 
 test:
 	bochs -f bochsrc
