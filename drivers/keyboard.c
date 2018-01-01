@@ -1,109 +1,180 @@
 #include "init.h"
 #include "keyboard.h"
 #include "tools.h"
+#include "tty.h"
 #include "common.h"
 
-u8 kbdus[128] = {
-  0,  27, '1', '2', '3', '4', '5', '6', '7', '8',	  /* 9 */
-  '9', '0', '-', '=', '\b',	                      /* Backspace */
-  '\t',			                                  /* Tab */
-  'q', 'w', 'e', 'r',	                              /* 19 */
-  't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',	  /* Enter key */
-  0,			                                      /* 29   - Control */
-  'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ':', /* 39 */
-  '\'', '`',   0,		                              /* Left shift */
-  '\\', 'z', 'x', 'c', 'v', 'b', 'n',			      /* 49 */
-  'm', ',', '.', '/',   0,				          /* Right shift */
-  '*',
-  0,	                                              /* Alt */
-  ' ',	                                          /* Space bar */
-  0,	                                              /* Caps lock */
-  0,	                                              /* 59 - F1 key ... > */
-  0,   0,   0,   0,   0,   0,   0,   0,
-  0,	                                              /* < ... F10 */
-  0,	                                              /* 69 - Num lock*/
-  0,	                                              /* Scroll Lock */
-  0,	                                              /* Home key */
-  0,	                                              /* Up Arrow */
-  0,	                                              /* Page Up */
-  '-',
-  0,	                                              /* Left Arrow */
-  0,
-  0,	                                              /* Right Arrow */
-  '+',
-  0,	                                              /* 79 - End key*/
-  0,	                                              /* Down Arrow */
-  0,	                                              /* Page Down */
-  0,	                                              /* Insert Key */
-  0,	                                              /* Delete Key */
-  0,   0,   0,
-  0,	                                              /* F11 Key */
-  0,	                                              /* F12 Key */
-  0,	                                              /* All other keys are undefined */
+static struct keymap us_keymap = {
+  //normal keys
+  {
+    /* first row - indices 0 to 14 */
+    0, 27, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',
+    /* second row - indices 15 to 28 */
+    '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n', //Enter key
+    /* 29 = Control, 30 - 41: third row */
+    0, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`',
+    /* fourth row, indices 42 to 54, zeroes are shift-keys*/
+    0, '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0,
+    '*',
+    /* Special keys */
+    0,    // ALT - 56
+    ' ', // Space - 57
+    0,    // Caps lock - 58
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // F1 to F10 - 59 to 68
+    0, // Num lock - 69
+    0, // Scroll lock - 70
+    0, // Home - 71
+    72, // Up arrow - 72  TODO
+    0, // Page up - 73
+    '-',
+    0, // Left arrow - 75
+    0,
+    0, // Right arrow -77
+    '+',
+    0, // End - 79
+    80, // Dowm arrow - 80  TODO
+    0, // Page down - 81
+    0, // Insert - 82
+    0, // Delete - 83
+    0, 0, 0,
+    0, // F11 - 87
+    0, // F12 - 88
+    0, // All others undefined
+  },
+  // caps
+  {
+    /* first row - indices 0 to 14 */
+    0, 27, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',
+    /* second row - indices 15 to 28 */
+    '\t', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\n',
+    /* 29 = Control, 30 - 41: third row */
+    0, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', '`',
+    /* fourth row, indices 42 to 54, zeroes are shift-keys*/
+    0, '|', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 0, '*',
+    /* Special keys */
+    0,   // ALT - 56
+    ' ', // Space - 57
+    0,   // Caps lock - 58
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // F1 to F10 - 59 to 68
+    0, // Num lock - 69
+    0, // Scroll lock - 70
+    0, // Home - 71
+    0, // Up arrow - 72
+    0, // Page up - 73
+    '-',
+    0, // Left arrow - 75
+    0,
+    0, // Right arrow -77
+    '+',
+    0, // End - 79
+    0, // Dowm arrow - 80
+    0, // Page down - 81
+    0, // Insert - 82
+    0, // Delete - 83
+    0, 0, 0,
+    0, // F11 - 87
+    0, // F12 - 88
+    0, // All others undefined
+  },
+  // shift
+  {
+    /* first row - indices 0 to 14 */
+    0, 27, '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '\b',
+    /* second row - indices 15 to 28 */
+    '\t', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\n',
+    /* 29 = Control, 30 - 41: third row */
+    0, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '"', '~',
+    /* fourth row, indices 42 to 54, zeroes are shift-keys*/
+    0, '|', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', 0, '*',
+    /* Special keys */
+    0,   // ALT - 56
+    ' ', // Space - 57
+    0,   // Caps lock - 58
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // F1 to F10 - 59 to 68
+    0, // Num lock - 69
+    0, // Scroll lock - 70
+    0, // Home - 71
+    0, // Up arrow - 72
+    0, // Page up - 73
+    '-',
+    0, // Left arrow - 75
+    0,
+    0, // Right arrow -77
+    '+',
+    0, // End - 79
+    0, // Dowm arrow - 80
+    0, // Page down - 81
+    0, // Insert - 82
+    0, // Delete - 83
+    0, 0, 0,
+    0, // F11 - 87
+    0, // F12 - 88
+    0, // All others undefined
+  },
+  // control_map
+  {
+    29, // Ctrl
+    56, // Alt
+    0,  // AltGr
+    42, // left Shift
+    54, // right Shift
+    58, // Caps lock
+    70, // Scroll lock
+    69  // Num lock
+  },
+  // 键盘的控制键信息初始化为 0 
+  0
 };
-
-u8 kbdus_upper[128] = {
-  0,  27, '!', '@', '#', '$', '%', '^', '&', '*',	  /* 9 */
-  '(', ')', '_', '+', '\b',	                      /* Backspace */
-  '\t',			                                  /* Tab */
-  'Q', 'W', 'E', 'R',	                              /* 19 */
-  'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\n',	  /* Enter key */
-  0,			                                      /* 29   - Control */
-  'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', /* 39 */
-  '\"', '~',   0,		                              /* Left shift */
-  '\\', 'Z', 'X', 'C', 'V', 'B', 'N',			      /* 49 */
-  'M', '<', '>', '?',   0,				          /* Right shift */
-  '*',
-  0,	                                              /* Alt */
-  ' ',	                                          /* Space bar */
-  0,	                                              /* Caps lock */
-  0,	                                              /* 59 - F1 key ... > */
-  0,   0,   0,   0,   0,   0,   0,   0,
-  0,	                                              /* < ... F10 */
-  0,	                                              /* 69 - Num lock*/
-  0,	                                              /* Scroll Lock */
-  0,	                                              /* Home key */
-  0,	                                              /* Up Arrow */
-  0,	                                              /* Page Up */
-  '-',
-  0,	                                              /* Left Arrow */
-  0,
-  0,	                                              /* Right Arrow */
-  '+',
-  0,	                                              /* 79 - End key*/
-  0,	                                              /* Down Arrow */
-  0,	                                              /* Page Down */
-  0,	                                              /* Insert Key */
-  0,	                                              /* Delete Key */
-  0,   0,   0,
-  0,	                                              /* F11 Key */
-  0,	                                              /* F12 Key */
-  0,	                                              /* All other keys are undefined */
-};
-
-static int shift_state = 0 ;
 
 void keyboard_callback()
 {
-  u8 ch;
-  u8 code = inb(0x60); //read the data buffer
-  if(code == 0x2a || code == 0x36)
-    shift_state = 1;
-  else if(code == 0xaa || code == 0xb6 )
-    shift_state = 0;
+  u8 scancode = inb(0x60);
 
-  /* If the top bit of the byte we read from the keyboard is
-  *  set, that means that a key has just been released */
-  if (code & 0x80) {
-    /* You can use this one to see if the user released the
-    *  shift, alt, or control keys... */
+  struct keymap *layout = &us_keymap;
+
+  // keyboard handler 
+  // scancode & RELEASED_MASK means the key has been break
+  if (scancode & RELEASED_MASK) {
+    u32 i;
+    // Clean control state
+    for (i = 0; i < 5; i++) {
+      if(layout->control_map[i] == (scancode & ~RELEASED_MASK)) {
+        layout->controls &= ~(1 << i);
+        return;
+      }
+    }
+    // key pressed
   } else {
-    /* Here, a key was just pressed. Please note that if you
-    *  hold a key down, you will get repeated key press
-    *  interrupts. */
-    if(code == SHIFT_L || code == SHIFT_R) return;
-    ch = shift_state? kbdus_upper[code] : kbdus[code];
-    display_putc(ch, COLOR_GREEN, COLOR_BLACK);
+    u32 i;
+    // Check control set
+    for (i = 0; i < 8; i++) {
+      // 如果当前键是控制键，则给相关控制位置 1
+      // 如果已有该标志位，则给相关控制位清 0
+      if (layout->control_map[i] == scancode) {
+        if (layout->controls & 1 << i) {
+          layout->controls &= ~(1 << i);
+        } else {
+          layout->controls |= (1 << i);
+        }
+        return;
+      }
+    }
+    u8 *scancodes = layout->scancodes;
+
+    // If shift pressed, switch to shift code layout
+    if ((layout->controls & (LSHIFT | RSHIFT)) && !(layout->controls & CONTROL)) {
+      scancodes = layout->shift_scancodes;
+    }
+    // If Caps Lock on , switch layout to upper case
+    if ((layout->controls & (CAPSLOCK)) && !(layout->controls & CONTROL)) {
+      scancodes = layout->capslock_scancodes;
+    }
+    // Switch tty
+    if ((layout->controls & (ALT)) && !(layout->controls & CONTROL)){
+      if (scancode < TTY_NUMBER+2) switch_tty(&tty[scancode-2]);
+      return;
+    }
+    display_putc(tty_cur, scancodes[scancode], COLOR_GREEN, COLOR_BLACK);
   }
 }
 
