@@ -6,90 +6,114 @@
 
 u32 pid_now = 0;
 
-struct task_ctl *running_proc_head = NULL;
-struct task_ctl *wait_proc_head = NULL;
-struct task_ctl *current = NULL;
+struct proc_list *running_proc_head = NULL;
+struct proc_list *wait_proc_head = NULL;
+struct proc *current = NULL;
 
 void init_task()
 {
+  running_proc_head = (struct proc_list *)kmalloc(sizeof(struct proc_list));
   // current is kernel thread
-  current = (struct task_ctl *)kmalloc(sizeof(struct task_ctl));
+  current = (struct proc *)kmalloc(sizeof(struct proc));
+  current->context = (struct context *)kmalloc(sizeof(struct context));
 
-  current->state = TASK_RUNNABLE;
-  current->stack = &kstack;
+  current->state = RUNNABLE;
+  current->kstack = &kstack;
   current->pid = pid_now++; // kernel pid is 0
   current->mm = NULL;       // do not need this for kernel
+  current->tty = tty_cur;
 
-  current->task_next = current;
-  /*running_proc_head = current;*/
+  running_proc_head->proc = current;
+  running_proc_head->next = running_proc_head;
 
 }
 
 void schedule()
 {
-  if (current){
-    switch_to(current->task_next);
+  if (running_proc_head->next->proc->state == RUNNABLE){
+    running_proc_head = running_proc_head->next;
+    switch_to(running_proc_head->proc);
   }
 }
 
-void switch_to(struct task_ctl *next)
+void switch_to(struct proc *next)
 {
   if (current != next) {
-    struct task_ctl *prev = current;
+    struct proc *prev = current;
     current = next;
-    switch_task(&(prev->context), &(current->context));
+    prev->state = RUNNABLE;
+    next->state = RUNNING;
+    tty_print = next->tty;
+    switch_task(prev->context, current->context);
   }
 }
 
 // Create kernel process
-u32 kthread_start(u32 (*fn)(void *), void *arg)
+u32 kthread_start(u32 (*fn)(void *), struct tty *tty, void *arg)
 {
-  struct task_ctl *new_task = (struct task_ctl *)kmalloc(sizeof(struct task_ctl));
+  struct proc *new_task = (struct proc *)kmalloc(sizeof(struct proc));
+  new_task->context = (struct context *)kmalloc(sizeof(struct context));
   u32 *pstack = (u32 *)kmalloc(STACK_SIZE);
-  /*assert(new_task != NULL, "kern_thread: kmalloc error");*/
+  assert(new_task != NULL, "kern_thread: kmalloc error");
 
-  new_task->state = TASK_RUNNABLE;
-  new_task->stack = pstack;
+  new_task->state = RUNNABLE;
+  new_task->kstack = kstack;
   new_task->pid = pid_now++;
   new_task->mm = NULL;
+  new_task->tty = tty;
 
   u32 *stack_top = (u32 *)((u32)pstack + STACK_SIZE);
 
   *(--stack_top) = (u32)arg;
   *(--stack_top) = (u32)kthread_exit;
-  *(--stack_top) = (u32)fn;
+  /**(--stack_top) = (u32)fn;*/
 
-  new_task->context.esp = (u32)(stack_top - sizeof(u32)*3);
-  new_task->context.eip = (u32)fn;
-  /*new_task->context.ecx = 0;*/
+  new_task->context->esp = (u32)stack_top;
+  new_task->context->ebp = (u32)pstack;
+  new_task->context->eip = (u32)fn;
   // let task's eflags = 0x2000 (enable interrupt)
-  new_task->context.eflags = 0x200;
-
-  new_task->task_next = current;
-
-  /*if (current == NULL){*/
-    /*new_task->task_next = new_task;*/
-    /*[>running_proc_head = new_task;<]*/
-    /*current = new_task;*/
-  /*}*/
+  new_task->context->eflags = 0x200;
 
   // insert new task to tasklist's tail
-  /*struct task_ctl *tail = running_proc_head;*/
-  struct task_ctl *tail = current;
-  /*assert(tail != NULL, "Must init sched!");*/
+  struct proc_list *tail = running_proc_head;
+  assert(tail != NULL, "Must init sched!");
 
-  /*while (tail->task_next != running_proc_head) {*/
-  while (tail->task_next != current) {
-    tail = tail->task_next;
+  while (tail->next != running_proc_head) {
+    tail = tail->next;
   }
-  tail->task_next = new_task;
+  tail->next = (struct proc_list *)kmalloc(sizeof(struct proc_list));
+  tail->next->proc = new_task;
+  tail->next->next = running_proc_head;
 
   return new_task->pid;
 }
 
-void kthread_exit()
+void kthread_exit(u32 val)
 {
+  /*u32 val; asm ("movl %%eax, %0\n" :"=m"(val));*/
+  kprint("Thread exited with value %d\n", val);
+
   while (1);
 }
 
-
+void switch_to_user_mode()
+{
+  // Set up a stack structure for switching to user mode.
+  asm volatile("  \
+      cli; \
+      mov $0x23, %ax; \
+      mov %ax, %ds; \
+      mov %ax, %es; \
+      mov %ax, %fs; \
+      mov %ax, %gs; \
+      \
+      mov %esp, %eax; \
+      pushl $0x23; \
+      pushl %eax; \
+      pushf; \
+      pushl $0x1B; \
+      push $1f; \
+      iret; \
+      1: \
+      ");
+}

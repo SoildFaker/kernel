@@ -5,23 +5,13 @@
 
 static void gdt_set_gate(int, u32, u32, u8, u8);
 static void idt_set_gate(u8, u32, u16, u8);
-static void init_gdt();
-static void init_idt();
 
 u32 kstack[2048];
-gdt_entry_t gdt_entries[8];
+gdt_entry_t gdt_entries[5];
 gdt_ptr_t   gdt_ptr;
 idt_entry_t idt_entries[256];
 idt_ptr_t   idt_ptr;
 interrupt_handler_t interrupt_handlers[256];
-
-void init_descriptor_tables()
-{
-  init_gdt();
-  kprint("GDT OK\n");
-  init_idt();
-  kprint("IDT OK\n");
-}
 
 static void gdt_set_gate(
   int num,
@@ -61,31 +51,46 @@ static void init_8259A()
 
   // init 8259A
   // 0001 0001
-  outb(0x11, 0x20);
-  outb(0x11, 0xA0);
+  outb(0x20, 0x11);
+  outb(0xA0, 0x11);
  
   // set master chip int code start from 0x20(30)
-  outb(0x20, 0x21);
+  outb(0x21, 0x20);
  
   // set slave chip int code start from 0x28(40)
-  outb(0x28, 0xA1);
+  outb(0xA1, 0x28);
  
   // master chip IR2 pin connected to slave chip
-  outb(0x04, 0x21);
+  outb(0x21, 0x04);
  
   // salve chip out pin connected master chip IR2
-  outb(0x02, 0xA1);
+  outb(0xA1, 0x02);
  
   // work mode 8086
-  outb(0x01, 0x21);
-  outb(0x01, 0xA1);
+  outb(0x21, 0x01);
+  outb(0xA1, 0x01);
  
   // stop int
-  outb(0xFF, 0x21);
-  outb(0xFF, 0xA1);
+  outb(0x21, 0xFF);
+  outb(0xA1, 0xFF);
 }
 
-static void init_idt()
+void init_gdt()
+{
+  gdt_ptr.limit = sizeof(gdt_entries) - 1;
+  gdt_ptr.base  = (u32)&gdt_entries;
+
+  gdt_set_gate(0, 0, 0, 0, 0);
+  gdt_set_gate(1, 0, 0xffffffff, A_CR, G_32);
+  gdt_set_gate(2, 0, 0xffffffff, A_DRW, G_32);
+  gdt_set_gate(3, 0, 0xffffffff, A_DPL3|A_CR, G_32);
+  gdt_set_gate(4, 0, 0xffffffff, A_DPL3|A_DRW, G_32);
+
+  gdt_flush((u32)&gdt_ptr);
+
+}
+ 
+void init_idt()
 {
   init_8259A();
   irq_enable(2);
@@ -163,7 +168,7 @@ void irq_eoi(u32 nr)
   outb(0x20, 0x20);
   if(nr >= 40) {
     // send reset to slave chip
-    outb(0x20, 0xA0);
+    outb(0xA0, 0x20);
   }
 }
 
@@ -171,8 +176,8 @@ void irq_enable(u8 irq)
 {
   u16 irq_mask = (inb(0xA1)<<8) + inb(0x21);
   irq_mask &= ~(1<<irq);
-  outb(irq_mask, 0x21);
-  outb(irq_mask >> 8, 0xA1);
+  outb(0x21, irq_mask);
+  outb(0xA1, irq_mask >> 8);
 }
 
 void irq_handler(pt_regs *regs)
@@ -187,21 +192,4 @@ void irq_handler(pt_regs *regs)
     kprint_color(COLOR_BLUE, COLOR_BLACK, "INT: %d NO HANDLER\n", regs->int_no);
   }
 }
-
-static void init_gdt()
-{
-  gdt_ptr.limit = sizeof(gdt_entries) - 1;
-  gdt_ptr.base  = (u32)&gdt_entries;
-
-  gdt_set_gate(0, 0, 0, 0, 0);
-  gdt_set_gate(1, 0, 0xffffffff, A_CR, G_32);
-  gdt_set_gate(2, 0, 0xffffffff, A_DRW, G_32);
-  gdt_set_gate(3, 0, 0xffffffff, A_DRWA, G_32);
-  gdt_set_gate(4, 0, 0xffffffff, A_DPL3|A_CR, G_32);
-  gdt_set_gate(5, 0, 0xffffffff, A_DPL3|A_DRW, G_32);
-  gdt_set_gate(6, 0, 0xffffffff, A_LDT, G_32);
-  gdt_set_gate(7, 0, 0xffffffff, A_DPL3|A_DRW, G_32);
-  gdt_flush((u32)&gdt_ptr);
-
-}
-  
+ 

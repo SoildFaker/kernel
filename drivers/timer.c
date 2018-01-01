@@ -26,15 +26,15 @@ void init_timer(u32 frequency)
   // 设置 8253/8254 芯片工作在模式 3 下
   // 然了，屏蔽中断就没办法了。
   // 完成中断请求和定时器中断 · 61 ·
-  outb(0x36, 0x43);
+  outb(0x43, 0x36);
   
   // 拆分低字节和高字节
   u8 low = (u8)(divisor & 0xFF);
   u8 hign = (u8)((divisor >> 8) & 0xFF);
   
   // 分别写入低字节和高字节
-  outb(low, 0x40);
-  outb(hign, 0x40);
+  outb(0x40, low);
+  outb(0x40, hign);
 
   irq_enable(0);
 }

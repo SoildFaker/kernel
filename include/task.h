@@ -3,17 +3,13 @@
 
 #include "common.h"
 #include "page.h"
+#include "tty.h"
 
-// process state
-typedef
-enum task_state {
-  TASK_UNINIT = 0,    // uninitilized
-  TASK_SLEEPING = 1,
-  TASK_RUNNABLE = 2,  // runnable or running
-  TASK_ZOMBIE = 3,
-} task_state;
+#define PROC_SIZE 4096
 
-struct task_env {
+enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+
+struct context {
  	u32 eip;
  	u32 esp;
 	u32 ebp;
@@ -29,28 +25,33 @@ struct mm_struct {
   page_entry_t *pdt_proc; // process's pdt
 };
 
-struct task_ctl {
-  u32 pid;
-  void *stack;
-  volatile task_state state;    // task state
+struct proc {
+  volatile u32 pid;
+  void *kstack;                 // Bottom of kernel stack of this process
+  enum procstate state;         // Process state
   struct mm_struct *mm;         // task memory space
-  struct task_env context;      // task content
-  struct task_ctl *task_next;
+  struct tty *tty;
+  struct context *context;      // switch() here to run process
+};
+
+struct proc_list {
+  struct proc *proc;
+  struct proc_list *next;
 };
 
 // schedulable process list
-extern struct task_ctl *running_proc_head;
-extern struct task_ctl *wait_proc_head;
+extern struct proc_list *running_proc_head;
+extern struct proc_list *wait_proc_head;
 // current process
-extern struct task_ctl *current;
+extern struct proc *current;
 // Global pid
 extern u32 pid_now;
 
-extern void switch_task(struct task_env *next, struct task_env *current);
-u32  kthread_start(u32 (*fn)(void *), void *arg);
-void kthread_exit();
+extern void switch_task(struct context *next, struct context *current);
+u32  kthread_start(u32 (*fn)(void *), struct tty *tty, void *arg);
+void kthread_exit(u32 val);
 void init_task();
 void schedule();
-void switch_to(struct task_ctl *next);
+void switch_to(struct proc *next);
 
 #endif
