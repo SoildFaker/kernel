@@ -1,42 +1,58 @@
 #include "tty.h"
 #include "display.h"
 
-tty_t *tty_cur;
+struct tty *tty_cur;
 
-tty_t tty_1;
-tty_t tty_2;
+struct tty tty[TTY_NUMBER];
+
+static void set_video_start_addr(u32 addr);
+
+void set_title_bar(struct tty *tty, u8 tty_num)
+{
+  u16 attribute = (u16)(COLOR_BLUE | COLOR_LIGHT_GREY << 4)<<8;
+  volatile u16 *buffer = (volatile u16 *)(tty->buffer);
+  u8 i;
+  u8 title[6] = {'T', 'T', 'Y', ' ', (u8)(tty_num + '0'), 0};
+  for (i=0; i<80; i++) {
+    if (i<6) {
+      buffer[i] = title[i]  | attribute;
+    } else {
+      buffer[i] = ' ' | attribute;
+    }
+  }
+}
 
 void init_tty()
 {
-  tty_1.offset = 0;
-  tty_2.offset = TTY_BUFFER_SIZE;
-  tty_1.buffer = (volatile u16 *)(VBUFFER_MEM + tty_1.offset);
-  tty_2.buffer = (volatile u16 *)(VBUFFER_MEM + tty_2.offset);
-  tty_1.next = &tty_2;
-  tty_2.next = &tty_1;
-
-  tty_cur = &tty_1;
+  u8 i;
+  for (i=0; i<TTY_NUMBER; i++ ){
+    tty[i].offset = TTY_BUFFER_SIZE * i;
+    tty[i].buffer = (volatile u16 *)(VBUFFER_MEM + tty[i].offset);
+    tty[i].cursor_x = 0;
+    tty[i].cursor_y = 1;
+    set_title_bar(&tty[i], i);
+  }
+  tty_cur = &tty[0];
+  tty_print = tty_cur;
   switch_tty(tty_cur);
 }
 
-u32 i = 0;
-u32 tty_task(void *arg)
-{
-  for(;;){
-    if (i>0x2fffff){
-      switch_tty(tty_cur->next);
-      i=0;
-    }
-    i++;
-  }
-  return 0;
-}
-
-void switch_tty(tty_t *tty)
+// Switch video buffer start address
+// using io function write registers to set VGA memory start address
+// There is a confused thing, the start address must be half of video memory size
+// Didn't know why
+void switch_tty(struct tty *tty)
 {
   tty_cur = tty;
-  outb(VBUFFER_START_H, CRT_ADDR_REG);
-  outb(((tty->offset>>1) + VBUFFER_MEM) >> 8, CRT_DATA_REG);
-  outb(VBUFFER_START_L, CRT_ADDR_REG);
-  outb(((tty->offset>>1) + VBUFFER_MEM), CRT_DATA_REG);
+  set_video_start_addr(tty->offset>>1);
 }
+
+static void set_video_start_addr(u32 addr)
+{
+  cli();
+  outb(CRT_ADDR_REG, VBUFFER_START_H);
+  outb(CRT_DATA_REG, (addr >> 8) & 0xFF);
+  outb(CRT_ADDR_REG, VBUFFER_START_L);
+  outb(CRT_DATA_REG, addr & 0xFF);
+  sti();
+};

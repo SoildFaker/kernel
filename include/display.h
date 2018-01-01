@@ -22,6 +22,8 @@
 
 #define CRT_ADDR_REG 0x3D4   // CRT controller register - Address Register
 #define CRT_DATA_REG 0x3D5   // CRT controller register - Date Register
+#define CURSOR_START 0xA     // Cursor start location
+#define CURSOR_END   0xB     // Cursor end location
 #define VBUFFER_START_H 0xC  // Video Buffer Start High 8 bit
 #define VBUFFER_START_L 0xD  // Video Buffer Start Low 8 bit
 #define CURSOR_H 0xE         // Cursor high 8 bit
@@ -29,15 +31,13 @@
 #define VBUFFER_MEM 0xB8000
 #define VBUFFER_LEN 0x8000
 
-void draw_line(u16 x1, u16 y1, u16 x2, u16 y2, u8 color);
-void draw_rectangle(u16 x, u16 y, u16 width, u16 hight, u8 color);
-void print_font8(u16 x, u16 y, u8 ch);
+extern struct tty *tty_print;
 
 void flush_screen();
 void flush_line(u8);
 void display_print_color(const char *string, u8 fg, u8 bg);
 void display_print(const char *string);
-void display_putc(char c, u8 fg, u8 bg);
+void display_putc(struct tty *tty, char c, u8 fg, u8 bg);
 void display_print_hex(u32 num);
 
 #endif
