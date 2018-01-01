@@ -4,18 +4,25 @@
 #ifndef __COMMON__
 #define __COMMON__
 
+#define NULL 0
+#define __UNUSED__ __attribute__((unused))
 /* this panic just get into dead loop */
-#define  PANIC(Expression)                       \
-  {                                              \
-    kprint("KERNEL PANIC: %s\n", Expression);    \
-    while(1) ;                                   \
-  }                                              \
+#define  PANIC(info)                       \
+{                                          \
+  kprint("KERNEL PANIC: %s\n", info);    \
+  while(1) ;                               \
+}                                          \
+
+#define assert(x, info) \
+  do { \
+    if (!(x)) { \
+      PANIC(info); \
+    } \
+  } while (0)
 
 typedef unsigned char  u8;
 typedef unsigned short u16;
 typedef unsigned long  u32;
-
-#define NULL 0
 
 static inline void cli(void)
 {
