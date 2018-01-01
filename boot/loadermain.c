@@ -19,7 +19,7 @@ void bootmain(void)
   u8 *pa;
   elf = (elf_header_t *)0x10000; // scratch space
   // Read 1st page off disk
-  readseg((u8 *)elf, 4096, 2 * SECTSIZE);
+  readseg((u8 *)elf, 4096*2, 2 * SECTSIZE);
   // Is this an ELF executable?
   if(elf->magic != ELF_MAGIC)
     return; // let bootasm.S handle error
