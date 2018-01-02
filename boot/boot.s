@@ -1,13 +1,13 @@
-.code16           # Assemble for 16-bit code
+.code16                   # Assemble for 16-bit code
 
 start:
-  movw %cs, %ax # make segment register point to 0x07c0
+  movw %cs, %ax           # make segment register point to 0x07c0
   movw %ax, %ds
   movw %ax, %ss
-  movw $0x0fff, %sp       # stack pointer prepare for copy kernel
+  movw $0x0fff, %sp       # stack pointer prepare for copy disk
 
 # Store memory map info 
-# It will save memory map at 
+# Save memory map at 0x0500, Then kernel would read this address
 get_memory_map:
   movw $0, %ax 
   movw %ax, %es
@@ -33,7 +33,7 @@ load_disk:
   movw $0x0800, %ax       # move to 0x8000 in menory
   movw %ax, %es           # ES:BX point to buffer
   xor  %bx, %bx
-  movw $0x0200+1, %ax   # AH function index AL number of sector
+  movw $0x0200+2, %ax   # AH function index AL number of sector
   int  $0x13
   jnc  ok_loaded
 die:  jmp  die
