@@ -8,7 +8,9 @@ start:
   movw %ax, %es # −> Extra Segment
   movw %ax, %ss # −> Stack Segment
 
-protected_mode:        # enable A20 line 
+protected_mode:
+
+# enable A20 line 
   in  $0x92, %al
   or  $0x02, %al
   out %al, $0x92

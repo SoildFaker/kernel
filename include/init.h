@@ -3,6 +3,11 @@
 
 #include "common.h"
 
+#define KERN_CODE 0x08
+#define KERN_DATA 0x10
+#define USER_CODE 0x18
+#define USER_DATA 0x20
+
 #define G_32    0xcf
 #define G_16    0x0f
 

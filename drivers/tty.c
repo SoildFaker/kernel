@@ -40,7 +40,7 @@ void init_tty()
 // Switch video buffer start address
 // using io function write registers to set VGA memory start address
 // There is a confused thing, the start address must be half of video memory size
-// Didn't know why
+// Didn't know the reason
 void switch_tty(struct tty *tty)
 {
   tty_cur = tty;

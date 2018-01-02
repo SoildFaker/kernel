@@ -1,6 +1,3 @@
-// common.h -- Defines typedefs and some global functions.
-//             From JamesM's kernel development tutorials.
-
 #ifndef __COMMON__
 #define __COMMON__
 

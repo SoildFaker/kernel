@@ -24,7 +24,7 @@ static struct keymap us_keymap = {
     0, // Num lock - 69
     0, // Scroll lock - 70
     0, // Home - 71
-    72, // Up arrow - 72  TODO
+    72, // Up arrow - 72
     0, // Page up - 73
     '-',
     0, // Left arrow - 75
@@ -32,7 +32,7 @@ static struct keymap us_keymap = {
     0, // Right arrow -77
     '+',
     0, // End - 79
-    80, // Dowm arrow - 80  TODO
+    80, // Dowm arrow - 80 
     0, // Page down - 81
     0, // Insert - 82
     0, // Delete - 83
@@ -148,8 +148,8 @@ void keyboard_callback()
     u32 i;
     // Check control set
     for (i = 0; i < 8; i++) {
-      // 如果当前键是控制键，则给相关控制位置 1
-      // 如果已有该标志位，则给相关控制位清 0
+      // If pressed is control key set control bit to 1
+      // otherwise set to 0
       if (layout->control_map[i] == scancode) {
         if (layout->controls & 1 << i) {
           layout->controls &= ~(1 << i);
@@ -180,6 +180,8 @@ void keyboard_callback()
 
 void init_keyboard()
 {
+  // register keyboard interrupt handler
   register_interrupt_handler(IRQ1, (interrupt_handler_t)&keyboard_callback);
+  // enable keyboard interrupt
   irq_enable(1);
 }

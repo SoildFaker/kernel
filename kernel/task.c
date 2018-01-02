@@ -6,15 +6,15 @@
 
 u32 pid_now = 0;
 
-struct proc_list *running_proc_head = NULL;
-struct proc_list *wait_proc_head = NULL;
-struct proc *current = NULL;
+struct task_list *running_task_head = NULL;
+struct task_list *wait_task_head = NULL;
+struct task *current = NULL;
 
 void init_task()
 {
-  running_proc_head = (struct proc_list *)kmalloc(sizeof(struct proc_list));
+  running_task_head = (struct task_list *)kmalloc(sizeof(struct task_list));
   // current is kernel thread
-  current = (struct proc *)kmalloc(sizeof(struct proc));
+  current = (struct task *)kmalloc(sizeof(struct task));
   current->context = (struct context *)kmalloc(sizeof(struct context));
 
   current->state = RUNNABLE;
@@ -23,23 +23,23 @@ void init_task()
   current->mm = NULL;       // do not need this for kernel
   current->tty = tty_cur;
 
-  running_proc_head->proc = current;
-  running_proc_head->next = running_proc_head;
+  running_task_head->task = current;
+  running_task_head->next = running_task_head;
 
 }
 
 void schedule()
 {
-  if (running_proc_head->next->proc->state == RUNNABLE){
-    running_proc_head = running_proc_head->next;
-    switch_to(running_proc_head->proc);
+  if (running_task_head->next->task->state == RUNNABLE){
+    running_task_head = running_task_head->next;
+    switch_to(running_task_head->task);
   }
 }
 
-void switch_to(struct proc *next)
+void switch_to(struct task *next)
 {
   if (current != next) {
-    struct proc *prev = current;
+    struct task *prev = current;
     current = next;
     prev->state = RUNNABLE;
     next->state = RUNNING;
@@ -48,10 +48,10 @@ void switch_to(struct proc *next)
   }
 }
 
-// Create kernel process
+// Create kernel taskess
 u32 kthread_start(u32 (*fn)(void *), struct tty *tty, void *arg)
 {
-  struct proc *new_task = (struct proc *)kmalloc(sizeof(struct proc));
+  struct task *new_task = (struct task *)kmalloc(sizeof(struct task));
   new_task->context = (struct context *)kmalloc(sizeof(struct context));
   u32 *pstack = (u32 *)kmalloc(STACK_SIZE);
   assert(new_task != NULL, "kern_thread: kmalloc error");
@@ -75,15 +75,15 @@ u32 kthread_start(u32 (*fn)(void *), struct tty *tty, void *arg)
   new_task->context->eflags = 0x200;
 
   // insert new task to tasklist's tail
-  struct proc_list *tail = running_proc_head;
+  struct task_list *tail = running_task_head;
   assert(tail != NULL, "Must init sched!");
 
-  while (tail->next != running_proc_head) {
+  while (tail->next != running_task_head) {
     tail = tail->next;
   }
-  tail->next = (struct proc_list *)kmalloc(sizeof(struct proc_list));
-  tail->next->proc = new_task;
-  tail->next->next = running_proc_head;
+  tail->next = (struct task_list *)kmalloc(sizeof(struct task_list));
+  tail->next->task = new_task;
+  tail->next->next = running_task_head;
 
   return new_task->pid;
 }

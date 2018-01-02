@@ -29,7 +29,7 @@ void init_page()
 {
   u32 address = 0;
   /*u32 address = ((u32)kernel_start & PAGE_MASK) - 0x1000;*/
-  while (address < (((u32)kernel_end & PAGE_MASK) + 0x1000)){
+  while (address < (((u32)kernel_end & PAGE_MASK) + PAGE_SIZE)){
     (*pet+(address>>12))->base  = address >> 12;
     (*pet+(address>>12))->flags = PG_PRESENT | PG_WRITE;
     address += PAGE_SIZE;
@@ -47,13 +47,13 @@ void init_page()
 
 void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
 {
-  u32 pdt_idx = PDT_INDEX(va);
-  u32 pet_idx = PET_INDEX(va);
+  u32 pdt_index = PDT_INDEX(va);
+  u32 pet_index = PET_INDEX(va);
   page_entry_t *pet_now;
 
-  pet_now = (page_entry_t *)((u32)pdt_now[pdt_idx].base << 12);
+  pet_now = (page_entry_t *)((u32)pdt_now[pdt_index].base << 12);
   // if the PET not present
-  if ((pdt_now[pdt_idx].flags & 0x01) == 0){
+  if ((pdt_now[pdt_index].flags & 0x01) == 0){
     u32 new_pet_addr = pmm_alloc_page();
     // find an existed PET entry for new page
     page_entry_t *new_page = unused_page();
@@ -61,29 +61,29 @@ void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
     new_page->flags = PG_PRESENT | PG_WRITE;
 
     // PDT entry point to the PET contained new_page
-    pdt_now[pdt_idx].base = (u32)new_page >> 12;
-    pdt_now[pdt_idx].flags = PG_PRESENT | PG_WRITE;
+    pdt_now[pdt_index].base = (u32)new_page >> 12;
+    pdt_now[pdt_index].flags = PG_PRESENT | PG_WRITE;
 
     // pet_now entry point to new page
     pet_now = (page_entry_t *)((u32)new_page & PAGE_MASK);
   }
-  pet_now[pet_idx].base = (pa >> 12);
-  pet_now[pet_idx].flags = flags;
+  pet_now[pet_index].base = (pa >> 12);
+  pet_now[pet_index].flags = flags;
   // flush CPU page cache
   asm volatile ("invlpg (%0)" : : "a" (va));
 }
 
 void unmap(page_entry_t *pdt_now, u32 va)
 {
-  u32 pdt_idx = PDT_INDEX(va);
-  u32 pet_idx = PET_INDEX(va);
+  u32 pdt_index = PDT_INDEX(va);
+  u32 pet_index = PET_INDEX(va);
   
-  if ((pdt_now[pdt_idx].flags & 0x01) == 0) {
+  if ((pdt_now[pdt_index].flags & 0x01) == 0) {
     return;
   }
   
-  page_entry_t *pet_now = (page_entry_t *)((u32)pdt_now[pdt_idx].base << 12);
-  pet_now[pet_idx].flags = 0;
+  page_entry_t *pet_now = (page_entry_t *)((u32)pdt_now[pdt_index].base << 12);
+  pet_now[pet_index].flags = 0;
   
   // flush CPU page cache
   asm volatile ("invlpg (%0)" : : "a" (va));
@@ -91,17 +91,17 @@ void unmap(page_entry_t *pdt_now, u32 va)
 
 u32 get_mapping(page_entry_t *pdt_now, u32 va, u32 *pa)
 {
-  u32 pdt_idx = PDT_INDEX(va);
-  u32 pet_idx = PET_INDEX(va);
+  u32 pdt_index = PDT_INDEX(va);
+  u32 pet_index = PET_INDEX(va);
   
-  if ((pdt_now[pdt_idx].flags & 0x01) == 0) {
+  if ((pdt_now[pdt_index].flags & 0x01) == 0) {
     return 0;
   }
 
-  page_entry_t *pet_now = (page_entry_t *)((u32)pdt_now[pdt_idx].base << 12);
-  // 如果地址有效而且指针不为，则返回地址NULL
-  if (pet_now[pet_idx].flags != 0 && pa) {
-    *pa = pet_now[pet_idx].base << 12;
+  page_entry_t *pet_now = (page_entry_t *)((u32)pdt_now[pdt_index].base << 12);
+  // if page exists return psychics addrss
+  if (pet_now[pet_index].flags != 0 && pa) {
+    *pa = pet_now[pet_index].base << 12;
     return 1;
   }
 

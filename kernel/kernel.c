@@ -45,7 +45,7 @@ void kmain(void)
   // allow interrupt
   sti();
 
-  // print 'K' at current tty
+  // print kernel task runs how many times
   while(1){
     kprint("Proc Runs:%d\r", a);
   }

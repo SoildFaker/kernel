@@ -1,3 +1,6 @@
+// lib for grapich mode 
+// Not used for now
+
 #include "common.h"
 #include "font.h"
 

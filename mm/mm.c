@@ -7,7 +7,6 @@ mmap_entry_t *mmap = (mmap_entry_t *)0x1000;
 u32 *count = (u32 *)0x500;
 
 memory_header_t *heap_first = 0;
-// 申请内存块
 static void alloc_chunk(u32 start, u32 len);
 static void free_chunk(memory_header_t *chunk);
 static void split_chunk(memory_header_t *chunk, u32 len);
@@ -25,9 +24,9 @@ void init_pmm()
 
   u8 i;
   for (i = 1; i < *count; i++){
-    // 如果是可用内存 ( 按照协议，1 表示可用内存，其它数字指保留区域 )
+    // If this memory section are usable
     if ((map_entry+i)->type == 0x1){
-      // 把内核结束位置到结束位置的内存段，按页存储到页管理栈里
+      // store these usable memory page to page mangement stack
       u32 page_addr = (map_entry+i)->base_low;
       u32 length = (map_entry+i)->base_low + (map_entry+i)-> length_low;
 

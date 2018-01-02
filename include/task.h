@@ -7,7 +7,7 @@
 
 #define PROC_SIZE 4096
 
-enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+enum taskstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 struct context {
  	u32 eip;
@@ -22,28 +22,28 @@ struct context {
 }__attribute__((packed));
 
 struct mm_struct {
-  page_entry_t *pdt_proc; // process's pdt
+  page_entry_t *pdt_task; // taskess's pdt
 };
 
-struct proc {
+struct task {
   volatile u32 pid;
-  void *kstack;                 // Bottom of kernel stack of this process
-  enum procstate state;         // Process state
+  void *kstack;                 // Bottom of kernel stack of this taskess
+  enum taskstate state;         // Process state
   struct mm_struct *mm;         // task memory space
   struct tty *tty;
-  struct context *context;      // switch() here to run process
+  struct context *context;      // switch() here to run taskess
 };
 
-struct proc_list {
-  struct proc *proc;
-  struct proc_list *next;
+struct task_list {
+  struct task *task;
+  struct task_list *next;
 };
 
-// schedulable process list
-extern struct proc_list *running_proc_head;
-extern struct proc_list *wait_proc_head;
-// current process
-extern struct proc *current;
+// schedulable taskess list
+extern struct task_list *running_task_head;
+extern struct task_list *wait_task_head;
+// current taskess
+extern struct task *current;
 // Global pid
 extern u32 pid_now;
 
@@ -52,6 +52,6 @@ u32  kthread_start(u32 (*fn)(void *), struct tty *tty, void *arg);
 void kthread_exit(u32 val);
 void init_task();
 void schedule();
-void switch_to(struct proc *next);
+void switch_to(struct task *next);
 
 #endif
