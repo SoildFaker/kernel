@@ -2,7 +2,7 @@
 // Part of the boot sector, along with bootasm.S, which calls bootmain().
 // bootasm.S has put the processor into protected 32−bit mode.
 // bootmain() loads an ELF kernel image from the disk starting at
-// sector 1 and then jumps to the kernel entry routine.
+// sector 3 and then jumps to the kernel entry routine.
 
 #include "common.h"
 #include "elf.h"
@@ -19,7 +19,7 @@ void bootmain(void)
   u8 *pa;
   elf = (elf_header_t *)0x10000; // scratch space
   // Read 1st page off disk
-  readseg((u8 *)elf, 4096*2, 2 * SECTSIZE);
+  readseg((u8 *)elf, 4096, 2 * SECTSIZE);
   // Is this an ELF executable?
   if(elf->magic != ELF_MAGIC)
     return; // let bootasm.S handle error

@@ -8,13 +8,12 @@ start:
   movw %ax, %es # −> Extra Segment
   movw %ax, %ss # −> Stack Segment
 
-protected_mode:
-# enable A20 line 
+protected_mode:        # enable A20 line 
   in  $0x92, %al
   or  $0x02, %al
   out %al, $0x92
 
-  lgdt gdt_ptr           # load the new gdt pointer
+  lgdt gdt_ptr         # load the new gdt pointer
 
 # Switch from real to protected mode. Use a bootstrap GDT that makes
 # virtual addresses map directly to physical addresses so that the
@@ -35,16 +34,16 @@ start_32:
   movw %ax, %ds
   movw %ax, %es
   movw %ax, %ss
-  #movw $0x0, %ax    # for now don't use fs,gs
+  movw $0x0, %ax    # for now don't use fs,gs
   movw %ax, %fs
   movw %ax, %gs
 
-  # Set up the stack pointer and call into C.
+# Set up the stack pointer and call into C.
   movl $start, %esp
   call bootmain
 
-  # If bootmain returns (it shouldn’t), trigger a Bochs
-  # breakpoint if running under Bochs, then loop.
+# If bootmain returns (it shouldn’t), trigger a Bochs
+# breakpoint if running under Bochs, then loop.
   movw $0x8a00, %ax # 0x8a00 −> port 0x8a00
   movw %ax, %dx
   outw %ax, %dx
