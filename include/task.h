@@ -26,7 +26,9 @@ struct mm_struct {
 };
 
 struct task {
-  volatile u32 pid;
+  u32 pid;
+  volatile u32 time_slice;
+  u8 priority;
   void *kstack;                 // Bottom of kernel stack of this taskess
   enum taskstate state;         // Process state
   struct mm_struct *mm;         // task memory space
@@ -48,10 +50,11 @@ extern struct task *current;
 extern u32 pid_now;
 
 extern void switch_task(struct context *next, struct context *current);
-u32  kthread_start(u32 (*fn)(void *), struct tty *tty, void *arg);
+u32  kthread_start(u32 (*fn)(void *), struct tty *tty, u8 priority, void *arg);
 void kthread_exit(u32 val);
 void init_task();
 void schedule();
 void switch_to(struct task *next);
+u32 task_idle(void *arg);
 
 #endif
