@@ -34,20 +34,21 @@ void kmain(void)
 
   // multi task init
   init_task();
-  kthread_start(test_a, &tty[1], NULL);
-  kthread_start(test_b, &tty[1], NULL);
-  kthread_start(test_c, &tty[1], NULL);
+  kthread_start(task_idle, &tty[0], 10, NULL);
+  kthread_start(test_a, &tty[1], 2, NULL);
+  kthread_start(test_b, &tty[2], 3, NULL);
+  kthread_start(test_c, &tty[3], 4, NULL);
   
   // interrupt handler registed
-  init_timer(10);     // schedule() here
   init_keyboard();
+  init_timer(200);     // schedule() here
 
   // allow interrupt
   sti();
 
   // print kernel task runs how many times
   while(1){
-    kprint("Proc Runs:%d\r", a);
+    kprint("Proc Runs:%d\r", current->time_slice);
   }
   asm volatile("hlt");
 
