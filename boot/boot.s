@@ -7,7 +7,7 @@ start:
   movw $0x0fff, %sp       # stack pointer prepare for copy disk
 
 # Store memory map info 
-# Save memory map at 0x0500, Then kernel would read this address
+# Save memory map at 0x1000, Then kernel would read this address
 get_memory_map:
   movw $0, %ax 
   movw %ax, %es
