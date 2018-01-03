@@ -26,6 +26,11 @@ static inline void cli(void)
   asm volatile("cli");
 }
 
+static inline void hlt(void)
+{
+  asm volatile("hlt");
+}
+
 static inline void sti(void)
 {
   asm volatile("sti");
