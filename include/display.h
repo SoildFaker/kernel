@@ -28,7 +28,7 @@
 #define VBUFFER_START_L 0xD  // Video Buffer Start Low 8 bit
 #define CURSOR_H 0xE         // Cursor high 8 bit
 #define CURSOR_L 0xF         // Cursor low 8 bit
-#define VBUFFER_MEM 0xB8000
+#define VBUFFER_MEM 0xC00B8000
 #define VBUFFER_LEN 0x8000
 
 extern struct tty *tty_print;

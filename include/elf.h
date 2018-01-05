@@ -36,7 +36,7 @@ struct elf_section_header {
   u32 memsz;
   u32 flags;
   u32 align;
-};
+}__attribute__((packed));
 typedef struct elf_section_header elf_section_header_t;
 
 // Values for Proghdr type

@@ -12,6 +12,7 @@
 #define  PG_SIZE      0x080
 #define  PAGE_SIZE    0x1000
 #define  PAGE_MASK    0xFFFFF000
+#define  PAGE_OFFSET  0xC0000000
 
 #define  KPDT_COUNT   4
 #define  KERNV_START  0x100000
