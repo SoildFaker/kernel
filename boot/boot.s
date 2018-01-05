@@ -4,7 +4,7 @@ start:
   movw %cs, %ax           # make segment register point to 0x07c0
   movw %ax, %ds
   movw %ax, %ss
-  movw $0x0fff, %sp       # stack pointer prepare for copy disk
+  movl $0x5000, %esp       # stack pointer prepare for copy disk
 
 # Store memory map info 
 # Save memory map at 0x1000, Then kernel would read this address

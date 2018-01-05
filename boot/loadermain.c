@@ -6,10 +6,16 @@
 
 #include "common.h"
 #include "elf.h"
+#include "page.h"
 
 #define SECTSIZE 512
 
+// Temp page directory table
+u32 *pdt_kernel = (u32 *)(0x2000);
+u32 *pet_kernel = (u32 *)(0x3000);
+u32 *pet_loader = (u32 *)(0x4000);
 void readseg(u8 *pa, u32 count, u32 offset);
+void early_page_init(void);
 
 void bootmain(void)
 {
@@ -17,7 +23,8 @@ void bootmain(void)
   elf_section_header_t *ph, *eph;
   void (*entry)(void);
   u8 *pa;
-  elf = (elf_header_t *)0x10000; // scratch space
+  early_page_init();
+  elf = (elf_header_t *)(0x10000); // scratch space
   // Read 1st page off disk
   readseg((u8 *)elf, 4096, 2 * SECTSIZE);
   // Is this an ELF executable?
@@ -27,15 +34,34 @@ void bootmain(void)
   ph = (elf_section_header_t *)((u8*)elf + elf->phoff);
   eph = ph + elf->phnum;
   for(; ph < eph; ph++){
-    pa = (u8 *)ph->paddr;
+    pa = (u8 *)ph->vaddr;
     readseg(pa, ph->filesz, 2 * SECTSIZE + ph->off);
     if(ph->memsz > ph->filesz)
-      stosb(pa + ph->filesz, 0, ph->memsz - ph->filesz);
+      stosb(pa + ph->filesz, 0, 2 * SECTSIZE + ph->memsz - ph->filesz);
   }
   // Call the entry point from the ELF header.
   // Does not return!
   entry = (void(*)(void))(elf->entry);
   entry();
+}
+
+// Set kernel virtual address start from PAGE_OFFSET
+void early_page_init(void)
+{
+  pdt_kernel[0] = (u32)pet_loader | PG_WRITE | PG_PRESENT;
+  pdt_kernel[PDT_INDEX(PAGE_OFFSET)] = (u32)pet_kernel | PG_WRITE | PG_PRESENT;
+  u32 i;
+  for (i=0; i<1024; i++) {
+    pet_loader[i] = (i << 12) | PG_WRITE | PG_PRESENT;
+  }
+  for (i=0; i<1024; i++) {
+    pet_kernel[i] = (i << 12) | PG_WRITE | PG_PRESENT;
+  }
+  asm volatile ("mov %0, %%cr3" :: "r"(pdt_kernel));   // put page table addr
+  u32 cr0;
+  asm volatile("mov %%cr0, %0": "=r"(cr0));
+  cr0 |= 0x80000000;                        // enable paging!
+  asm volatile("mov %0, %%cr0":: "r"(cr0));
 }
 
 void waitdisk(void)
