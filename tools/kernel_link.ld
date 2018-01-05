@@ -6,7 +6,7 @@
 ENTRY(kmain)
 SECTIONS
 {
-  . = 0x00100000;
+  . = 0xC0100000;
   PROVIDE( kernel_start = . );
   .text :
   {
