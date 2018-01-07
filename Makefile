@@ -7,12 +7,14 @@ INCLUDE = -I./include
 DISKIMG = ./80m.img
 OUTDIR = bin
 KNLDIR = kernel
+INITDIR = init
 DRIVERDIR = drivers
 MMDIR = mm
 BTLDIR = boot
 
 KNL_SRC = $(wildcard $(KNLDIR)/*.c) $(wildcard drivers/*.c) 
 KNL_SRC += $(wildcard $(MMDIR)/*.c)
+KNL_SRC += $(wildcard $(INITDIR)/*.c)
 KNL_ASM = $(wildcard $(KNLDIR)/*.s)
 
 KNL_OBJ := $(addprefix $(OUTDIR)/,$(notdir $(KNL_SRC:.c=.o)))
@@ -49,6 +51,10 @@ $(OUTDIR)/%.o: $(KNLDIR)/%.c
 	$(CC) $(GCFLAGS) -c $< -o $@
 
 $(OUTDIR)/%.o: $(MMDIR)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(GCFLAGS) -c $< -o $@
+
+$(OUTDIR)/%.o: $(INITDIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(GCFLAGS) -c $< -o $@
 
