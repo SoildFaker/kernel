@@ -6,7 +6,6 @@
 static void gdt_set_gate(int, u32, u32, u8, u8);
 static void idt_set_gate(u8, u32, u16, u8);
 
-u32 kstack[2048];
 gdt_entry_t gdt_entries[5];
 gdt_ptr_t   gdt_ptr;
 idt_entry_t idt_entries[256];
@@ -189,7 +188,7 @@ void irq_handler(pt_regs *regs)
   if(handler){
     handler(regs);
   }else{
-    kprint_color(COLOR_BLUE, COLOR_BLACK, "INT: %d NO HANDLER\n", regs->int_no);
+    printk_color(COLOR_BLUE, COLOR_BLACK, "INT: %d NO HANDLER\n", regs->int_no);
   }
 }
  
