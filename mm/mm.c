@@ -3,8 +3,9 @@
 #include "page.h"
 #include "init.h"
 
-mmap_entry_t *mmap = (mmap_entry_t *)0x1000;
-u32 *count = (u32 *)0x500;
+u32 kernel_stack[STACK_SIZE];
+mmap_entry_t *mmap = (mmap_entry_t *)(0x1000 + PAGE_OFFSET);
+u32 *count = (u32 *)(0x500 + PAGE_OFFSET);
 
 memory_header_t *heap_first = 0;
 static void alloc_chunk(u32 start, u32 len);
@@ -109,7 +110,7 @@ void alloc_chunk(u32 start, u32 len)
   // 必须循环申请内存页直到有到足够的可用内存
   while (start + len > heap_max) {
     u32 page = pmm_alloc_page();
-    map(kpdt, heap_max, page, PG_PRESENT | PG_WRITE);
+    map(pdt_kernel, heap_max, page, PG_PRESENT | PG_WRITE);
     heap_max += PAGE_SIZE;
   }
 }
@@ -126,8 +127,8 @@ void free_chunk(memory_header_t *chunk)
   while ((heap_max - PAGE_SIZE) >= (u32)chunk) {
     heap_max -= PAGE_SIZE;
     u32 page;
-    get_mapping(kpdt, heap_max, &page);
-    unmap(kpdt, heap_max);
+    get_mapping(pdt_kernel, heap_max, &page);
+    unmap(pdt_kernel, heap_max);
     pmm_free_page(page);
   }
 }
