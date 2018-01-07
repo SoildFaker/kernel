@@ -136,7 +136,7 @@ struct tss_entry_struct
   u32 ldt;        // Unused...
   u16 trap;
   u16 iomap_base;
-} __attribute__((packed));
+} __packed;
 typedef struct tss_entry_struct tss_entry_t;
 
 struct pt_regs_t {
@@ -154,13 +154,13 @@ struct gdt_entry_struct{
   u8  access;
   u8  granularity;
   u8  base_high;
-}__attribute__((packed)); // no compiler optimization
+} __packed; // no compiler optimization
 typedef struct gdt_entry_struct gdt_entry_t;
 
 struct gdt_ptr_struct{
   u16 limit;
   u32 base;
-}__attribute__((packed)); // no compiler optimization
+} __packed; // no compiler optimization
 typedef struct gdt_ptr_struct gdt_ptr_t;
 // A struct describing an interrupt gate.
 struct idt_entry_struct
@@ -170,7 +170,7 @@ struct idt_entry_struct
   u8  always0;             // This must always be zero.
   u8  flags;               // More flags. See documentation.
   u16 base_hi;             // The upper 16 bits of the address to jump to.
-} __attribute__((packed));
+} __packed;
 typedef struct idt_entry_struct idt_entry_t;
 
 // A struct describing a pointer to an array of interrupt handlers.
@@ -179,7 +179,7 @@ struct idt_ptr_struct
 {
   u16 limit;
   u32 base;                // The address of the first element in our idt_entry_t array.
-} __attribute__((packed));
+} __packed;
 typedef struct idt_ptr_struct idt_ptr_t;
 
 typedef void (*interrupt_handler_t)(pt_regs *);
@@ -194,7 +194,7 @@ struct call_gate_struct
 };
 typedef struct call_gate_struct call_gate_t;
 
-extern u32 kstack[2048];
+extern u8 kstack[2048];
 // These extern directives let us access the addresses of our ASM ISR handlers.
 extern void gdt_flush(u32);
 extern void idt_flush(u32);
