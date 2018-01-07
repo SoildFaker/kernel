@@ -28,7 +28,7 @@ void init_task()
   current->context = (struct context *)kmalloc(sizeof(struct context));
 
   current->state = RUNNABLE;
-  current->kstack = &kstack;
+  current->kstack = &kernel_stack;
   current->time_slice = 50;
   current->pid = pid_now++; // kernel pid is 0
   current->mm = NULL;       // do not need this for kernel
@@ -79,7 +79,7 @@ u32 kthread_start(u32 (*fn)(void *), struct tty *tty,u8 priority, void *arg)
   new_task->state = RUNNABLE;
   new_task->priority = priority;
   new_task->time_slice = priority * 5;
-  new_task->kstack = kstack;
+  new_task->kstack = kernel_stack;
   new_task->pid = pid_now++;
   new_task->mm = NULL;
   new_task->tty = tty;
@@ -113,7 +113,7 @@ u32 kthread_start(u32 (*fn)(void *), struct tty *tty,u8 priority, void *arg)
 void kthread_exit(u32 val)
 {
   /*u32 val; asm ("movl %%eax, %0\n" :"=m"(val));*/
-  kprint("Thread exited with value %d\n", val);
+  printk("Thread exited with value %d\n", val);
 
   while (1);
 }
