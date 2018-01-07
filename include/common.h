@@ -2,11 +2,16 @@
 #define __COMMON__
 
 #define NULL 0
-#define __UNUSED__ __attribute__((unused))
+#define __UNUSED__    __attribute__((unused))
+
+#define __init        __attribute__((section(".init.text")))
+#define __init_data   __attribute__((section(".init.data")))
+#define __packed      __attribute__((packed))
+
 /* this panic just get into dead loop */
 #define  PANIC(info)                       \
 {                                          \
-  kprint("KERNEL PANIC: %s\n", info);    \
+  printk("KERNEL PANIC: %s\n", info);    \
   while(1) ;                               \
 }                                          \
 
@@ -20,6 +25,8 @@
 typedef unsigned char  u8;
 typedef unsigned short u16;
 typedef unsigned long  u32;
+
+void kmain(void);
 
 static inline void cli(void)
 {
