@@ -31,6 +31,7 @@ typedef struct memory_header memory_header_t;
 extern mmap_entry_t *mmap;
 extern u32 *count;
 
+extern u32 kernel_stack[STACK_SIZE];
 extern u8 kernel_start[];
 extern u8 kernel_end[];
 

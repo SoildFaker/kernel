@@ -27,9 +27,9 @@ typedef __builtin_va_list va_list;
 
 
  // 内核的打印函数
-void kprint(const char *format, ...);
+void printk(const char *format, ...);
 int vsprintf(char *buff, const char *format, va_list args);
 // 内核的打印函数带颜色
-void kprint_color(u8 fg, u8 bg, const char *format, ...);
+void printk_color(u8 fg, u8 bg, const char *format, ...);
 
 #endif
