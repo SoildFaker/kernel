@@ -1,48 +1,44 @@
 #include "init.h"
 #include "page.h"
 #include "mm.h"
+#include "string.h"
 #include "display.h"
 #include "tools.h"
 
-page_entry_t kpdt[1024] __attribute__((aligned(PAGE_SIZE)));
-static page_entry_t pet[KPDT_COUNT][1024] __attribute__((aligned(PAGE_SIZE)));
-
-// TODO : the following function seems not to be efficient
-// next time fix it
-static page_entry_t *unused_page()
-{
-  u32 i,j;
-  for (i=0; i<1024; i++){
-    page_entry_t *pet_cur = (page_entry_t *)((u32)kpdt[i].base<<12);
-    if(pet_cur){
-      for (j=0; j<1024; j++){
-        if (pet_cur[j].flags == 0){
-          return &pet_cur[j];
-        }
-      }
-    }
-  }
-  return 0;
-}
+page_entry_t pdt_kernel[PAGE_TABLE_SIZE] __attribute__((aligned(PAGE_SIZE)));
+static page_entry_t pet_kernel[KPDT_COUNT][PAGE_TABLE_SIZE] __attribute__((aligned(PAGE_SIZE)));
 
 void init_page()
 {
-  u32 address = 0;
-  /*u32 address = ((u32)kernel_start & PAGE_MASK) - 0x1000;*/
-  while (address < (((u32)kernel_end & PAGE_MASK) + PAGE_SIZE)){
-    (*pet+(address>>12))->base  = address >> 12;
-    (*pet+(address>>12))->flags = PG_PRESENT | PG_WRITE;
-    address += PAGE_SIZE;
+  u32 i,j;
+  u32 kpdt_start = PDT_INDEX(PAGE_OFFSET);
+  for (i=kpdt_start, j=0; i<kpdt_start + KPDT_COUNT; i++, j++) {
+    pdt_kernel[i].base = ((u32)pet_kernel[j] - PAGE_OFFSET) >> 12;
+    pdt_kernel[i].flags = PG_WRITE | PG_PRESENT;
   }
-  u32 i;
-  for (i=0; i<KPDT_COUNT; i++){
-    kpdt[i].base = (u32)pet[i] >> 12;
-    kpdt[i].flags = PG_PRESENT | PG_WRITE;
+
+  page_entry_t *pet = *pet_kernel;
+  for (i=0; i < KPDT_SIZE; i++) {
+    pet[i].base = i;
+    pet[i].flags = PG_WRITE | PG_PRESENT;
   }
   register_interrupt_handler(14, (interrupt_handler_t)page_fault);
 
-  switch_pdt(kpdt);
-  enable_page();
+  u32 pdt_kernel_phy_addr = (u32)pdt_kernel - PAGE_OFFSET;
+  switch_pdt(pdt_kernel_phy_addr);
+  /*enable_page();*/
+}
+
+void switch_pdt(u32 pdt_addr)
+{
+  asm volatile ("movl %0, %%cr3" :: "r"(pdt_addr));   // put page table addr
+}
+
+void enable_page() {
+  u32 cr0;
+  asm volatile("movl %%cr0, %0": "=r"(cr0));
+  cr0 |= 0x80000000;                        // enable paging!
+  asm volatile("movl %0, %%cr0":: "r"(cr0));
 }
 
 void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
@@ -53,19 +49,16 @@ void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
 
   pet_now = (page_entry_t *)((u32)pdt_now[pdt_index].base << 12);
   // if the PET not present
-  if ((pdt_now[pdt_index].flags & 0x01) == 0){
-    u32 new_pet_addr = pmm_alloc_page();
-    // find an existed PET entry for new page
-    page_entry_t *new_page = unused_page();
-    new_page->base = new_pet_addr >> 12;
-    new_page->flags = PG_PRESENT | PG_WRITE;
-
-    // PDT entry point to the PET contained new_page
-    pdt_now[pdt_index].base = (u32)new_page >> 12;
-    pdt_now[pdt_index].flags = PG_PRESENT | PG_WRITE;
-
-    // pet_now entry point to new page
-    pet_now = (page_entry_t *)((u32)new_page & PAGE_MASK);
+  if (!pet_now) {
+    pet_now = (page_entry_t *)pmm_alloc_page();
+    pdt_now[pdt_index].base = (u32)pet_now >> 12;
+    pdt_now[pdt_index].flags = PG_WRITE | PG_PRESENT;
+    // Switch to kernel space
+    pet_now = (page_entry_t *)((u32)pet_now + PAGE_OFFSET);
+    bzero((u8 *)pet_now, PAGE_SIZE);
+  } else {
+    // Switch to kernel space
+    pet_now = (page_entry_t *)((u32)pet_now + PAGE_OFFSET);
   }
   pet_now[pet_index].base = (pa >> 12);
   pet_now[pet_index].flags = flags;
@@ -78,11 +71,13 @@ void unmap(page_entry_t *pdt_now, u32 va)
   u32 pdt_index = PDT_INDEX(va);
   u32 pet_index = PET_INDEX(va);
   
-  if ((pdt_now[pdt_index].flags & 0x01) == 0) {
+  page_entry_t *pet_now = (page_entry_t *)((u32)pdt_now[pdt_index].base << 12);
+  if (!pet_now) {
     return;
   }
-  
-  page_entry_t *pet_now = (page_entry_t *)((u32)pdt_now[pdt_index].base << 12);
+  // Switch to kernel space
+  pet_now = (page_entry_t *)((u32)pet_now + PAGE_OFFSET);
+  pet_now[pet_index].base = 0;
   pet_now[pet_index].flags = 0;
   
   // flush CPU page cache
@@ -93,12 +88,14 @@ u32 get_mapping(page_entry_t *pdt_now, u32 va, u32 *pa)
 {
   u32 pdt_index = PDT_INDEX(va);
   u32 pet_index = PET_INDEX(va);
-  
-  if ((pdt_now[pdt_index].flags & 0x01) == 0) {
-    return 0;
-  }
 
   page_entry_t *pet_now = (page_entry_t *)((u32)pdt_now[pdt_index].base << 12);
+  if (!pet_now) {
+    return 0;
+  }
+  // Switch to kernel space
+  pet_now = (page_entry_t *)((u32)pet_now + PAGE_OFFSET);
+
   // if page exists return psychics addrss
   if (pet_now[pet_index].flags != 0 && pa) {
     *pa = pet_now[pet_index].base << 12;
@@ -108,40 +105,39 @@ u32 get_mapping(page_entry_t *pdt_now, u32 va, u32 *pa)
   return 0;
 }
 
-void switch_pdt(page_entry_t *pdt)
-{
-  asm volatile ("mov %0, %%cr3" :: "r"(pdt));   // put page table addr
-}
-
-void enable_page() {
-  u32 cr0;
-  asm volatile("mov %%cr0, %0": "=r"(cr0));
-  cr0 |= 0x80000000;                        // enable paging!
-  asm volatile("mov %0, %%cr0":: "r"(cr0));
-}
-
 // Page Fault handler
 void page_fault(pt_regs *regs)
 {
   // The faulting address is stored in the CR2 register.
-  u32 faulting_address;
-  asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
+  u32 cr2;
+  asm volatile ("mov %%cr2, %0" : "=r" (cr2));
 
-  // The error code gives us details of what happened.
-  int present   = !(regs->err_code & 0x1); // Page not present
-  int rw = regs->err_code & 0x2;           // Write operation?
-  int us = regs->err_code & 0x4;           // Processor was in user-mode?
-  int reserved = regs->err_code & 0x8;     // Overwritten CPU-reserved bits of page entry?
-  //int id = regs->err_code & 0x10;        // Caused by an instruction fetch?
+  printk("Page fault at 0x%x, virtual faulting address 0x%x\n", regs->eip, cr2);
+  printk("Error code: %x\n", regs->err_code);
 
-  // Output an error message.
-  display_print("Page fault! ( ");
-  if (present) {display_print("present ");}
-  if (rw) {display_print("read-only ");}
-  if (us) {display_print("user-mode ");}
-  if (reserved) {display_print("reserved ");}
-  display_print(") at 0x");
-  display_print_hex(faulting_address);
-  display_print("\n");
-  PANIC("Page fault");
+  // bit0=0: page is not present
+  if (!(regs->err_code & 0x1)) {
+    printk_color(COLOR_RED, COLOR_BLACK, "Page not present.\n");
+  }
+  // bit1=0: read fault | bit1=1: write fault
+  if (regs->err_code & 0x2) {
+    printk_color(COLOR_RED, COLOR_BLACK, "Write error.\n");
+  } else {
+    printk_color(COLOR_RED, COLOR_BLACK, "Read error.\n");
+  }
+  // bit2=1: interrupted in user mode | bit2=0 interrupted in kernel mode
+  if (regs->err_code & 0x4) {
+    printk_color(COLOR_RED, COLOR_BLACK, "In user mode.\n");
+  } else {
+    printk_color(COLOR_RED, COLOR_BLACK, "In kernel mode.\n");
+  }
+  // bit3=1: protected bit overwritten
+  if (regs->err_code & 0x8) {
+    printk_color(COLOR_RED, COLOR_BLACK, "Reserved bits being overwritten.\n");
+  }
+  // bit4=1: occured at instruction fetching
+  if (regs->err_code & 0x10) {
+    printk_color(COLOR_RED, COLOR_BLACK, "The fault occurred during an instruction fetch.\n");
+  }
+  while(1);
 }
