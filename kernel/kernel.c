@@ -48,7 +48,7 @@ void kmain(void)
 
   // print kernel task runs how many times
   while(1){
-    kprint("Proc Runs:%d\r", current->time_slice);
+    printk("Proc Runs:%d\r", current->time_slice);
   }
   asm volatile("hlt");
 
@@ -59,8 +59,9 @@ static inline void init_stack()
   // use new stack space
   asm volatile ("movw $0x10, %ax");
   asm volatile ("movw %ax, %ss");
-  asm volatile ("movl %0, %%ebp"::"r"((u32)kstack));
-  asm volatile ("movl %0, %%esp"::"r"((u32)kstack + sizeof(kstack)));
+  /*asm volatile ("movl %0, %%ebp"::"r"((u32)kernel_stack));*/
+  asm volatile ("xorl %ebp, %ebp");
+  asm volatile ("movl %0, %%esp"::"r"((u32)kernel_stack + sizeof(kernel_stack)));
 }
 
 static void print_info()
@@ -68,14 +69,14 @@ static void print_info()
   u8 i=0;
   mmap_entry_t *map_entry = mmap;
 
-  kprint("KERNEL LOADED\n");
-  kprint("KERNEL START: %x\n", kernel_start);
-  kprint("KERNEL END:   %x\n", kernel_end);
-  kprint("KERNEL SIZE:  %d kb\n", (kernel_end - kernel_start+1023)/1024);
+  printk("KERNEL LOADED\n");
+  printk("KERNEL START: %x\n", kernel_start);
+  printk("KERNEL END:   %x\n", kernel_end);
+  printk("KERNEL SIZE:  %d kb\n", (kernel_end - kernel_start+1023)/1024);
 
-  kprint("----------MEMORY MAP----------\n");
+  printk("----------MEMORY MAP----------\n");
   for (i = 0; i < *count; i++){
-    kprint("BASE: 0x%09X\tLENGTH: 0x%09X\tTYPE:0x%01X\n", 
+    printk("BASE: 0x%09X\tLENGTH: 0x%09X\tTYPE:0x%01X\n", 
       ((map_entry+i)->base_low | (map_entry+i)->base_high<<8), 
       ((map_entry+i)->length_low | (map_entry+i)->length_high<<8), 
       (map_entry+i)->type);
