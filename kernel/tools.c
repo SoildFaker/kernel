@@ -3,7 +3,7 @@
 #include "common.h"
 #include "string.h"
 
-void kprint(const char *format, ...)
+void printk(const char *format, ...)
 {
   // make it static to avoid using kernel stack every time
 	static char buff[1024];
@@ -19,7 +19,7 @@ void kprint(const char *format, ...)
 	display_print(buff);
 }
 
-void kprint_color(u8 fore, u8 back, const char *format, ...)
+void printk_color(u8 fore, u8 back, const char *format, ...)
 {
 	static char buff[1024];
 	va_list args;
