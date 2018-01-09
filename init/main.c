@@ -3,12 +3,12 @@
 #include "page.h"
 
 // Temp page directory table
-u32 __init_data *pdt_temp = (u32 *)(0x2000);
-u32 __init_data *pet_high = (u32 *)(0x3000);
-u32 __init_data *pet_low = (u32 *)(0x4000);
+u32 __INITDATA *pdt_temp = (u32 *)(0x2000);
+u32 __INITDATA *pet_high = (u32 *)(0x3000);
+u32 __INITDATA *pet_low = (u32 *)(0x4000);
 
 // Set kernel virtual address start from PAGE_OFFSET
-void __init early_page_init(void)
+void __INIT early_page_init(void)
 {
   pdt_temp[0] = (u32)pet_low | PG_WRITE | PG_PRESENT;
   pdt_temp[PDT_INDEX(PAGE_OFFSET)] = (u32)pet_high | PG_WRITE | PG_PRESENT;

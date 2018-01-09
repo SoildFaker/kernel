@@ -8,6 +8,8 @@
 page_entry_t pdt_kernel[PAGE_TABLE_SIZE] __attribute__((aligned(PAGE_SIZE)));
 static page_entry_t pet_kernel[KPDT_COUNT][PAGE_TABLE_SIZE] __attribute__((aligned(PAGE_SIZE)));
 
+// Initilizing kernel page directory table
+// Mapping kernel space start at 0xC0000000
 void init_page()
 {
   u32 i,j;
@@ -41,6 +43,7 @@ void enable_page() {
   asm volatile("movl %0, %%cr0":: "r"(cr0));
 }
 
+// Mapping physical address to vritual address
 void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
 {
   u32 pdt_index = PDT_INDEX(va);
@@ -115,29 +118,33 @@ void page_fault(pt_regs *regs)
   printk("Page fault at 0x%x, virtual faulting address 0x%x\n", regs->eip, cr2);
   printk("Error code: %x\n", regs->err_code);
 
-  // bit0=0: page is not present
-  if (!(regs->err_code & 0x1)) {
-    printk_color(COLOR_RED, COLOR_BLACK, "Page not present.\n");
+  // bit0=0: Protection fault
+  if (!(regs->err_code & (1 << 0))) {
+    ERROR("Page not present.");
   }
   // bit1=0: read fault | bit1=1: write fault
-  if (regs->err_code & 0x2) {
-    printk_color(COLOR_RED, COLOR_BLACK, "Write error.\n");
+  if (regs->err_code & (1 << 2)) {
+    ERROR("Write error.");
   } else {
-    printk_color(COLOR_RED, COLOR_BLACK, "Read error.\n");
+    ERROR("Read error.");
   }
   // bit2=1: interrupted in user mode | bit2=0 interrupted in kernel mode
-  if (regs->err_code & 0x4) {
-    printk_color(COLOR_RED, COLOR_BLACK, "In user mode.\n");
+  if (regs->err_code & (1 << 2)) {
+    ERROR("In user mode.");
   } else {
-    printk_color(COLOR_RED, COLOR_BLACK, "In kernel mode.\n");
+    ERROR("In kernel mode.");
   }
   // bit3=1: protected bit overwritten
-  if (regs->err_code & 0x8) {
-    printk_color(COLOR_RED, COLOR_BLACK, "Reserved bits being overwritten.\n");
+  if (regs->err_code & (1 << 3)) {
+    ERROR("Use of reserved bit detected.");
   }
   // bit4=1: occured at instruction fetching
-  if (regs->err_code & 0x10) {
-    printk_color(COLOR_RED, COLOR_BLACK, "The fault occurred during an instruction fetch.\n");
+  if (regs->err_code & (1 << 4)) {
+    ERROR("Fault was an instruction fetch.");
+  }
+  // bit5=1: Protection keys block access
+  if (regs->err_code & (1 << 5)) {
+    ERROR("Protection keys block access");
   }
   while(1);
 }

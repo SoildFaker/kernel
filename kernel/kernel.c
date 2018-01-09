@@ -17,8 +17,7 @@ void kmain(void)
 {
   // kernel state init
   // no print function here
-  init_gdt();
-  init_idt();
+  init_desc();
   init_stack();
 
   // print function inited
