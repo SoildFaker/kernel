@@ -4,15 +4,20 @@
 #define NULL 0
 #define __UNUSED__    __attribute__((unused))
 
-#define __init        __attribute__((section(".init.text")))
-#define __init_data   __attribute__((section(".init.data")))
-#define __packed      __attribute__((packed))
-
+#define __INIT        __attribute__((section(".init.text")))
+#define __INITDATA    __attribute__((section(".init.data")))
+#define __PACKED      __attribute__((packed))
+#define asmlinkage    __attribute__((regparm(0)))
 /* this panic just get into dead loop */
 #define  PANIC(info)                       \
 {                                          \
   printk("KERNEL PANIC: %s\n", info);    \
   while(1) ;                               \
+}                                          \
+
+#define  ERROR(info)                       \
+{                                          \
+  printk_color(COLOR_RED, COLOR_BLACK, "%s\n", info);    \
 }                                          \
 
 #define assert(x, info) \
