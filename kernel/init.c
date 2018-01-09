@@ -3,44 +3,85 @@
 #include "string.h"
 #include "tools.h"
 
-static void gdt_set_gate(int, u32, u32, u8, u8);
-static void idt_set_gate(u8, u32, u16, u8);
+#define GDT_ENTRY_INIT(flags, base, limit) \
+	{							\
+		.limit0	= (u16) (limit),		\
+		.limit1	= ((limit) >> 16) & 0x0F,	\
+		.base0	= (u16) (base),			\
+		.base1	= ((base) >> 16) & 0xFF,	\
+		.base2	= ((base) >> 24) & 0xFF,	\
+		.type		= (flags & 0x0f),		\
+		.s  		= (flags >> 4) & 0x01,		\
+		.dpl		= (flags >> 5) & 0x03,		\
+		.p	  	= (flags >> 7) & 0x01,		\
+		.avl		= (flags >> 12) & 0x01,		\
+		.zero		= (flags >> 13) & 0x01,		\
+		.db	  	= (flags >> 14) & 0x01,		\
+		.g	  	= (flags >> 15) & 0x01,		\
+	}
 
-gdt_entry_t gdt_entries[5];
-gdt_ptr_t   gdt_ptr;
-idt_entry_t idt_entries[256];
-idt_ptr_t   idt_ptr;
+#define GATE(vector, _segment, _type, _dpl) \
+	{						\
+		.addr0		= (u16) (vector),		\
+		.addr1		= (u16)((vector) >> 16),	\
+		.type   	= _type,		\
+		.dpl	    = _dpl,			\
+		.p		    = 1,  			\
+		.segment	= _segment,	\
+	}
+
+// Interrupt gate
+#define INTG(vector)	\
+	GATE(vector, __KERNEL_CS, GATE_INTERRUPT, DPL0)
+
+#define def_isr(x)  extern void isr##x(void)
+
+#define def_irq(x)  extern void irq##x(void)
+
+#define ISR_ENTRY(x)  [x] = INTG((u32)isr##x)
+
+#define IRQ_ENTRY(x)  [IRQ##x] = INTG((u32)irq##x)
+
+def_isr(0);  def_isr(1);  def_isr(2);  def_isr(3);  def_isr(4);  def_isr(5);
+def_isr(6);  def_isr(7);  def_isr(8);  def_isr(9);  def_isr(10); def_isr(11);
+def_isr(12); def_isr(13); def_isr(14); def_isr(15); def_isr(16); def_isr(17);
+def_isr(18); def_isr(19); def_isr(20); def_isr(21); def_isr(22); def_isr(23);
+def_isr(24); def_isr(25); def_isr(26); def_isr(27); def_isr(28); def_isr(29);
+def_isr(30); def_isr(31); def_isr(255); 
+
+def_irq(0);  def_irq(1);  def_irq(2);  def_irq(3); def_irq(4);  def_irq(5);
+def_irq(6);  def_irq(7);  def_irq(8);  def_irq(9); def_irq(10); def_irq(11);
+def_irq(12); def_irq(13); def_irq(14); def_irq(15);
+
+struct cpu_struct this_cpu = { 
+  .gdt = {
+    [GDT_ENTRY_KERNEL_CS] = GDT_ENTRY_INIT(DEC_KERNEL_CS, 0, 0xffffffff),
+    [GDT_ENTRY_KERNEL_DS] = GDT_ENTRY_INIT(DEC_KERNEL_DS, 0, 0xffffffff),
+    [GDT_ENTRY_USER_CS]   = GDT_ENTRY_INIT(DEC_USER_CS, 0, 0xffffffff),
+    [GDT_ENTRY_USER_DS]   = GDT_ENTRY_INIT(DEC_USER_DS, 0, 0xffffffff),
+  },
+  .gdt_ptr = {
+    .limit = GDT_ENTRY_NUM * sizeof(struct gdt_desc_struct),
+    .base = (u32)&(this_cpu.gdt),
+  },
+  .idt = {
+    ISR_ENTRY(0), ISR_ENTRY(1), ISR_ENTRY(2), ISR_ENTRY(3), ISR_ENTRY(4), ISR_ENTRY(5),
+    ISR_ENTRY(6), ISR_ENTRY(7), ISR_ENTRY(8), ISR_ENTRY(9), ISR_ENTRY(10), ISR_ENTRY(11),
+    ISR_ENTRY(12), ISR_ENTRY(13), ISR_ENTRY(14), ISR_ENTRY(15), ISR_ENTRY(16), ISR_ENTRY(17),
+    ISR_ENTRY(18), ISR_ENTRY(19), ISR_ENTRY(20), ISR_ENTRY(21), ISR_ENTRY(22), ISR_ENTRY(23),
+    ISR_ENTRY(24), ISR_ENTRY(25), ISR_ENTRY(26), ISR_ENTRY(27), ISR_ENTRY(28), ISR_ENTRY(29),
+    ISR_ENTRY(30), ISR_ENTRY(31), ISR_ENTRY(255),
+    IRQ_ENTRY(0), IRQ_ENTRY(1), IRQ_ENTRY(2), IRQ_ENTRY(3), IRQ_ENTRY(4), IRQ_ENTRY(5),
+    IRQ_ENTRY(6), IRQ_ENTRY(7), IRQ_ENTRY(8), IRQ_ENTRY(9), IRQ_ENTRY(10), IRQ_ENTRY(11),
+    IRQ_ENTRY(12), IRQ_ENTRY(13), IRQ_ENTRY(14), IRQ_ENTRY(15),
+  },
+  .idt_ptr = {
+    .limit = IDT_ENTRY_NUM * sizeof(struct idt_desc_struct),
+    .base = (u32)&(this_cpu.idt),
+  },
+};
+
 interrupt_handler_t interrupt_handlers[256];
-
-static void gdt_set_gate(
-  int num,
-  u32 base,
-  u32 limit,
-  u8  access,
-  u8  granularity
-  )
-{
-  gdt_entries[num].base_low = base & 0xffff;
-  gdt_entries[num].base_mid = (base >> 16) & 0xff;
-  gdt_entries[num].base_high = (base >> 24) & 0xff;
-
-  gdt_entries[num].segment_limit = limit;
-  gdt_entries[num].granularity = (limit >> 16) & 0x0f;
-  gdt_entries[num].granularity |= granularity & 0xf0;
-  gdt_entries[num].access = access;
-}
-
-static void idt_set_gate(u8 num, u32 base, u16 sel, u8 flags)
-{
-  idt_entries[num].base_lo = base & 0xFFFF;
-  idt_entries[num].base_hi = (base >> 16) & 0xFFFF;
-
-  idt_entries[num].sel     = sel;
-  idt_entries[num].always0 = 0;
-  // We must uncomment the OR below when we get to using user-mode.
-  // It sets the interrupt gate's privilege level to 3.
-  idt_entries[num].flags   = flags /* | 0x60 */;
-}
 
 static void init_8259A()
 {
@@ -74,83 +115,13 @@ static void init_8259A()
   outb(0xA1, 0xFF);
 }
 
-void init_gdt()
+void init_desc(void)
 {
-  gdt_ptr.limit = sizeof(gdt_entries) - 1;
-  gdt_ptr.base  = (u32)&gdt_entries;
-
-  gdt_set_gate(0, 0, 0, 0, 0);
-  gdt_set_gate(1, 0, 0xffffffff, A_CR, G_32);
-  gdt_set_gate(2, 0, 0xffffffff, A_DRW, G_32);
-  gdt_set_gate(3, 0, 0xffffffff, A_DPL3|A_CR, G_32);
-  gdt_set_gate(4, 0, 0xffffffff, A_DPL3|A_DRW, G_32);
-
-  gdt_flush((u32)&gdt_ptr);
-
-}
- 
-void init_idt()
-{
+  gdt_flush((u32)&(this_cpu.gdt_ptr));
   init_8259A();
   irq_enable(2);
-  idt_ptr.limit = sizeof(idt_entries) - 1;
-  idt_ptr.base  = (u32)&idt_entries;
-
-  memset((u8 *)&idt_entries, 0, sizeof(idt_entries));
   memset((u8 *)&interrupt_handlers , 0, sizeof(interrupt_handlers));
-
-  idt_set_gate(0, (u32)isr0, 0x08, 0x8E);
-  idt_set_gate(1, (u32)isr1, 0x08, 0x8E);
-  idt_set_gate(2, (u32)isr2, 0x08, 0x8E);
-  idt_set_gate(3, (u32)isr3, 0x08, 0x8E);
-  idt_set_gate(4, (u32)isr4, 0x08, 0x8E);
-  idt_set_gate(5, (u32)isr5, 0x08, 0x8E);
-  idt_set_gate(6, (u32)isr6, 0x08, 0x8E);
-  idt_set_gate(7, (u32)isr7, 0x08, 0x8E);
-  idt_set_gate(8, (u32)isr8, 0x08, 0x8E);
-  idt_set_gate(9, (u32)isr9, 0x08, 0x8E);
-  idt_set_gate(10, (u32)isr10, 0x08, 0x8E);
-  idt_set_gate(11, (u32)isr11, 0x08, 0x8E);
-  idt_set_gate(12, (u32)isr12, 0x08, 0x8E);
-  idt_set_gate(13, (u32)isr13, 0x08, 0x8E);
-  idt_set_gate(14, (u32)isr14, 0x08, 0x8E);
-  idt_set_gate(15, (u32)isr15, 0x08, 0x8E);
-  idt_set_gate(16, (u32)isr16, 0x08, 0x8E);
-  idt_set_gate(17, (u32)isr17, 0x08, 0x8E);
-  idt_set_gate(18, (u32)isr18, 0x08, 0x8E);
-  idt_set_gate(19, (u32)isr19, 0x08, 0x8E);
-  idt_set_gate(20, (u32)isr20, 0x08, 0x8E);
-  idt_set_gate(21, (u32)isr21, 0x08, 0x8E);
-  idt_set_gate(22, (u32)isr22, 0x08, 0x8E);
-  idt_set_gate(23, (u32)isr23, 0x08, 0x8E);
-  idt_set_gate(24, (u32)isr24, 0x08, 0x8E);
-  idt_set_gate(25, (u32)isr25, 0x08, 0x8E);
-  idt_set_gate(26, (u32)isr26, 0x08, 0x8E);
-  idt_set_gate(27, (u32)isr27, 0x08, 0x8E);
-  idt_set_gate(28, (u32)isr28, 0x08, 0x8E);
-  idt_set_gate(29, (u32)isr29, 0x08, 0x8E);
-  idt_set_gate(30, (u32)isr30, 0x08, 0x8E);
-  idt_set_gate(31, (u32)isr31, 0x08, 0x8E);
-  idt_set_gate(32, (u32)irq0, 0x08, 0x8E);
-  idt_set_gate(33, (u32)irq1, 0x08, 0x8E);
-  idt_set_gate(34, (u32)irq2, 0x08, 0x8E);
-  idt_set_gate(35, (u32)irq3, 0x08, 0x8E);
-  idt_set_gate(36, (u32)irq4, 0x08, 0x8E);
-  idt_set_gate(37, (u32)irq5, 0x08, 0x8E);
-  idt_set_gate(38, (u32)irq6, 0x08, 0x8E);
-  idt_set_gate(39, (u32)irq7, 0x08, 0x8E);
-  idt_set_gate(40, (u32)irq8, 0x08, 0x8E);
-  idt_set_gate(41, (u32)irq9, 0x08, 0x8E);
-  idt_set_gate(42, (u32)irq10, 0x08, 0x8E);
-  idt_set_gate(43, (u32)irq11, 0x08, 0x8E);
-  idt_set_gate(44, (u32)irq12, 0x08, 0x8E);
-  idt_set_gate(45, (u32)irq13, 0x08, 0x8E);
-  idt_set_gate(46, (u32)irq14, 0x08, 0x8E);
-  idt_set_gate(47, (u32)irq15, 0x08, 0x8E);
-
-  // no.255 for syscall
-  idt_set_gate(255, (u32)isr255, 0x08, 0x8E);
-  idt_flush((u32)&idt_ptr);
+  idt_flush((u32)&(this_cpu.idt_ptr));
 }
 
 void register_interrupt_handler(u8 n, interrupt_handler_t h)
@@ -191,4 +162,4 @@ void irq_handler(pt_regs *regs)
     printk_color(COLOR_BLUE, COLOR_BLACK, "INT: %d NO HANDLER\n", regs->int_no);
   }
 }
- 
+
