@@ -1,5 +1,5 @@
-#include "tty.h"
-#include "display.h"
+#include "drivers/tty.h"
+#include "drivers/display.h"
 
 struct tty *tty_cur;
 

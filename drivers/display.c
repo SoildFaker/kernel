@@ -1,7 +1,7 @@
-#include "display.h"
+#include "drivers/display.h"
+#include "drivers/tty.h"
 #include "common.h"
 #include "string.h"
-#include "tty.h"
 
 struct tty *tty_print;
 

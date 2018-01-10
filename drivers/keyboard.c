@@ -1,7 +1,7 @@
 #include "init.h"
-#include "keyboard.h"
+#include "drivers/keyboard.h"
 #include "tools.h"
-#include "tty.h"
+#include "drivers/tty.h"
 #include "common.h"
 
 static struct keymap us_keymap = {
