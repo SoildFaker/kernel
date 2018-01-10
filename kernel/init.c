@@ -20,27 +20,25 @@
 		.g	  	= (flags >> 15) & 0x01,		\
 	}
 
-#define GATE(vector, _segment, _type, _dpl) \
-	{						\
-		.addr0		= (u16) (vector),		\
-		.addr1		= (u16)((vector) >> 16),	\
-		.type   	= _type,		\
-		.dpl	    = _dpl,			\
-		.p		    = 1,  			\
-		.segment	= _segment,	\
-	}
+#define GATE(idt_sel, vector, _segment, _type, _dpl) \
+		idt_sel.addr0		= (u16) (vector);		\
+		idt_sel.addr1		= (u16)((vector) >> 16);	\
+		idt_sel.type   	= _type;		\
+		idt_sel.dpl	    = _dpl;			\
+		idt_sel.p		    = 1;  			\
+		idt_sel.segment	= _segment;	\
 
 // Interrupt gate
-#define INTG(vector)	\
-	GATE(vector, __KERNEL_CS, GATE_INTERRUPT, DPL0)
+#define INTG(vector, idt_sel)	\
+	GATE(idt_sel, vector, __KERNEL_CS, GATE_INTERRUPT, DPL0)
 
 #define def_isr(x)  extern void isr##x(void)
 
 #define def_irq(x)  extern void irq##x(void)
 
-#define ISR_ENTRY(x)  [x] = INTG((u32)isr##x)
+#define ISR_ENTRY(x)  INTG((u32)isr##x, this_cpu.idt[x])
 
-#define IRQ_ENTRY(x)  [IRQ##x] = INTG((u32)irq##x)
+#define IRQ_ENTRY(x)  INTG((u32)irq##x, this_cpu.idt[IRQ##x])
 
 def_isr(0);  def_isr(1);  def_isr(2);  def_isr(3);  def_isr(4);  def_isr(5);
 def_isr(6);  def_isr(7);  def_isr(8);  def_isr(9);  def_isr(10); def_isr(11);
@@ -63,21 +61,6 @@ struct cpu_struct this_cpu = {
   .gdt_ptr = {
     .limit = GDT_ENTRY_NUM * sizeof(struct gdt_desc_struct),
     .base = (u32)&(this_cpu.gdt),
-  },
-  .idt = {
-    ISR_ENTRY(0), ISR_ENTRY(1), ISR_ENTRY(2), ISR_ENTRY(3), ISR_ENTRY(4), ISR_ENTRY(5),
-    ISR_ENTRY(6), ISR_ENTRY(7), ISR_ENTRY(8), ISR_ENTRY(9), ISR_ENTRY(10), ISR_ENTRY(11),
-    ISR_ENTRY(12), ISR_ENTRY(13), ISR_ENTRY(14), ISR_ENTRY(15), ISR_ENTRY(16), ISR_ENTRY(17),
-    ISR_ENTRY(18), ISR_ENTRY(19), ISR_ENTRY(20), ISR_ENTRY(21), ISR_ENTRY(22), ISR_ENTRY(23),
-    ISR_ENTRY(24), ISR_ENTRY(25), ISR_ENTRY(26), ISR_ENTRY(27), ISR_ENTRY(28), ISR_ENTRY(29),
-    ISR_ENTRY(30), ISR_ENTRY(31), ISR_ENTRY(255),
-    IRQ_ENTRY(0), IRQ_ENTRY(1), IRQ_ENTRY(2), IRQ_ENTRY(3), IRQ_ENTRY(4), IRQ_ENTRY(5),
-    IRQ_ENTRY(6), IRQ_ENTRY(7), IRQ_ENTRY(8), IRQ_ENTRY(9), IRQ_ENTRY(10), IRQ_ENTRY(11),
-    IRQ_ENTRY(12), IRQ_ENTRY(13), IRQ_ENTRY(14), IRQ_ENTRY(15),
-  },
-  .idt_ptr = {
-    .limit = IDT_ENTRY_NUM * sizeof(struct idt_desc_struct),
-    .base = (u32)&(this_cpu.idt),
   },
 };
 
@@ -117,6 +100,18 @@ static void init_8259A()
 
 void init_desc(void)
 {
+  ISR_ENTRY(0); ISR_ENTRY(1); ISR_ENTRY(2); ISR_ENTRY(3); ISR_ENTRY(4); ISR_ENTRY(5);
+  ISR_ENTRY(6); ISR_ENTRY(7); ISR_ENTRY(8); ISR_ENTRY(9); ISR_ENTRY(10); ISR_ENTRY(11);
+  ISR_ENTRY(12); ISR_ENTRY(13); ISR_ENTRY(14); ISR_ENTRY(15); ISR_ENTRY(16); ISR_ENTRY(17);
+  ISR_ENTRY(18); ISR_ENTRY(19); ISR_ENTRY(20); ISR_ENTRY(21); ISR_ENTRY(22); ISR_ENTRY(23);
+  ISR_ENTRY(24); ISR_ENTRY(25); ISR_ENTRY(26); ISR_ENTRY(27); ISR_ENTRY(28); ISR_ENTRY(29);
+  ISR_ENTRY(30); ISR_ENTRY(31); 
+  ISR_ENTRY(255);      // SYStem Call goes here
+  IRQ_ENTRY(0); IRQ_ENTRY(1); IRQ_ENTRY(2); IRQ_ENTRY(3); IRQ_ENTRY(4); IRQ_ENTRY(5);
+  IRQ_ENTRY(6); IRQ_ENTRY(7); IRQ_ENTRY(8); IRQ_ENTRY(9); IRQ_ENTRY(10); IRQ_ENTRY(11);
+  IRQ_ENTRY(12); IRQ_ENTRY(13); IRQ_ENTRY(14); IRQ_ENTRY(15);
+  this_cpu.idt_ptr.limit = IDT_ENTRY_NUM * sizeof(struct idt_desc_struct);
+  this_cpu.idt_ptr.base = (u32)&(this_cpu.idt);
   gdt_flush((u32)&(this_cpu.gdt_ptr));
   init_8259A();
   irq_enable(2);
