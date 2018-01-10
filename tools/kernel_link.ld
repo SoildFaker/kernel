@@ -6,7 +6,7 @@
 ENTRY(early_page_init)
 SECTIONS
 {
-  PROVIDE( kernel_start = 0xC0100000);
+  PROVIDE( kernel_start_pos = 0xC0100000);
   . = 0x100000;
 
   .init.text :
@@ -54,6 +54,6 @@ SECTIONS
    . = ALIGN(4096);
   }
 
-  PROVIDE( kernel_end = . );
+  PROVIDE( kernel_end_pos = . );
   /DISCARD/ : { *(.comment) *(.eh_frame) }
 }

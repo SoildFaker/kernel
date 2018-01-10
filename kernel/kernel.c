@@ -1,19 +1,19 @@
 #include "common.h"
 #include "init.h"
 #include "tools.h"
-#include "display.h"
-#include "timer.h"
-#include "keyboard.h"
 #include "mm.h"
 #include "task.h"
 #include "page.h"
 #include "test.h" // kernel test function
-#include "tty.h"
+#include "drivers/display.h"
+#include "drivers/timer.h"
+#include "drivers/keyboard.h"
+#include "drivers/tty.h"
 
 static inline void init_stack();
 static void print_info();
 
-void kmain(void)
+void kernel_start(void)
 {
   // kernel state init
   // no print function here
@@ -69,9 +69,9 @@ static void print_info()
   mmap_entry_t *map_entry = mmap;
 
   printk("KERNEL LOADED\n");
-  printk("KERNEL START: %x\n", kernel_start);
-  printk("KERNEL END:   %x\n", kernel_end);
-  printk("KERNEL SIZE:  %d kb\n", (kernel_end - kernel_start+1023)/1024);
+  printk("KERNEL START: %x\n", kernel_start_pos);
+  printk("KERNEL END:   %x\n", kernel_end_pos);
+  printk("KERNEL SIZE:  %d kb\n", (kernel_end_pos - kernel_start_pos+1023)/1024);
 
   printk("----------MEMORY MAP----------\n");
   for (i = 0; i < *count; i++){

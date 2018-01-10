@@ -32,7 +32,7 @@ void init_pmm()
       u32 length = (map_entry+i)->base_low + (map_entry+i)-> length_low;
 
       while (page_addr < length && page_addr <= MEMORY_SIZE) {
-        if (page_addr < (u32)kernel_start || page_addr > (u32)kernel_end + 0x1000){
+        if (page_addr < (u32)kernel_start_pos || page_addr > (u32)kernel_end_pos + 0x1000){
           pmm_free_page(page_addr);
           phy_page_count++;
         }

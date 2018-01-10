@@ -7,6 +7,7 @@ u32 __INITDATA *pdt_temp = (u32 *)(0x2000);
 u32 __INITDATA *pet_high = (u32 *)(0x3000);
 u32 __INITDATA *pet_low = (u32 *)(0x4000);
 
+extern void kernel_start(void);
 // Set kernel virtual address start from PAGE_OFFSET
 void __INIT early_page_init(void)
 {
@@ -25,6 +26,6 @@ void __INIT early_page_init(void)
   cr0 |= 0x80000000;                        // enable paging!
   asm volatile("mov %0, %%cr0":: "r"(cr0));
 
-  kmain();
+  kernel_start();
 }
 

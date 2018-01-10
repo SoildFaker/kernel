@@ -3,6 +3,7 @@
 #include "tools.h"
 #include "string.h"
 #include "common.h"
+#include "debug.h"
 
 u32 pid_now = 0;
 

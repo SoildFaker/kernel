@@ -2,7 +2,8 @@
 #include "page.h"
 #include "mm.h"
 #include "string.h"
-#include "display.h"
+#include "debug.h"
+#include "drivers/display.h"
 #include "tools.h"
 
 page_entry_t pdt_kernel[PAGE_TABLE_SIZE] __attribute__((aligned(PAGE_SIZE)));
