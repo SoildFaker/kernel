@@ -7,7 +7,7 @@ INCLUDE = -I./include
 DISKIMG = ./80m.img
 OUTDIR = bin
 
-EXCLUDE = -not -path "./boot/*" -not -path "./tools/*" -not -path "./fs/*"
+EXCLUDE = -not -path "./boot/*" -not -path "./tools/*" -not -path "./fs/fs.c"
 KNL_CSRC = $(shell find . -name "*.c" $(EXCLUDE))
 KNL_SSRC = $(shell find . -name "*.s" $(EXCLUDE))
 
@@ -25,12 +25,14 @@ KNL_LDFLAGS = -static -nostdlib --nmagic -melf_i386
 BTL_LDFLAGS = -static -nostdlib --nmagic --oformat=binary -melf_i386 
 
 BTL_OBJ = ./boot/loaderasm.o ./boot/loadermain.o ./drivers/hd.o 
+BTL_OBJ += ./fs/myfs/myfs.o ./kernel/string.o
 
 all:clean $(OUTDIR)/boot.bin $(OUTDIR)/loader.bin $(OUTDIR)/kernel.elf dd test
 
 clean:
 	rm -rf $(OUTDIR)/*
 	rm -rf $(OBJS)
+	rm -rf kernel.img
 
 $(OUTDIR)/kernel.elf: $(KNL_COBJ) $(KNL_SOBJ)
 	$(LD) -T$(KNL_LD) $(KNL_LDFLAGS) $(KNL_COBJ) $(KNL_SOBJ) -o $(OUTDIR)/kernel.elf
@@ -42,7 +44,7 @@ $(OUTDIR)/boot.bin: ./boot/boot.o
 	$(LD) -Ttext 0x7c00 --oformat=binary ./boot/boot.o -o $(OUTDIR)/boot.bin
 
 mkfs:
-	$(CC) tools/mkfs.c -o mkfs_kernel
+	$(CC) $(INCLUDE) -m32 -Os tools/mkfs.c -o mkfs_kernel
 
 $(KNL_COBJ): %.o: %.c
 	$(CC) $(GCFLAGS) -c $< -o $@
@@ -60,9 +62,12 @@ $(KNL_SOBJ): %.o: %.s
 	$(AS) $(ASFLAGS) $< -o $@
 
 dd:
+	./mkfs_kernel bin/loader.bin loader.bin bin/kernel.elf kernel.elf &
 	dd if=./$(OUTDIR)/boot.bin of=$(DISKIMG) obs=512 count=1 conv=notrunc
 	dd if=./$(OUTDIR)/loader.bin of=$(DISKIMG) obs=512 seek=1 conv=notrunc
-	dd if=./$(OUTDIR)/kernel.elf of=$(DISKIMG) obs=512 seek=3 conv=notrunc
+	dd if=./kernel.img of=$(DISKIMG) obs=512 seek=10 conv=notrunc
+#	dd if=./$(OUTDIR)/loader.bin of=$(DISKIMG) obs=512 seek=1 conv=notrunc
+#	dd if=./$(OUTDIR)/kernel.elf of=$(DISKIMG) obs=512 seek=3 conv=notrunc
 
 test:
 	bochs -f bochsrc
