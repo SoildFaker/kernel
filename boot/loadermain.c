@@ -8,6 +8,7 @@
 #include "elf.h"
 #include "page.h"
 #include "drivers/hd.h"
+#include "fs/myfs.h"
 
 void bootmain(void)
 {
@@ -16,8 +17,13 @@ void bootmain(void)
   void (*entry)(void);
   u8 *pa;
   elf = (elf_header_t *)(0x10000); // scratch space
-  // Read 1st page off disk
-  readseg((u8 *)elf, 4096, 2 * SECTOR_SIZE);
+  init_myfs();
+  // Read 1st page off disk 8 * 512
+  /*struct myfs_entry *tmp = find_file("kernel.elf");*/
+  struct myfs_entry *tmp = (struct myfs_entry *)(0x20000);
+
+  u32 elf_sector = tmp[1].data_sector;
+  readseg((u8 *)elf, 4096, elf_sector * SECTOR_SIZE);
   // Is this an ELF executable?
   if(elf->magic != ELF_MAGIC) {
     return; // let bootasm.S handle error
@@ -27,9 +33,9 @@ void bootmain(void)
   eph = ph + elf->phnum;
   for(; ph < eph; ph++){
     pa = (u8 *)ph->paddr;
-    readseg(pa, ph->filesz, 2 * SECTOR_SIZE + ph->off);
+    readseg(pa, ph->filesz, elf_sector * SECTOR_SIZE + ph->off);
     if(ph->memsz > ph->filesz) {
-      stosb(pa + ph->filesz, 0, 2 * SECTOR_SIZE + ph->memsz - ph->filesz);
+      stosb(pa + ph->filesz, 0, elf_sector * SECTOR_SIZE + (ph->memsz - ph->filesz));
     }
   }
   // Call the entry point from the ELF header.

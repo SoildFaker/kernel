@@ -25,7 +25,7 @@ u32 write_fs(fs_node_t *node, u32 offset, u32 size, u8 *buffer)
   }
 }
 
-void open_fs(fs_node_t *node, u8 read, u8 write)
+void open_fs(fs_node_t *node, __UNUSED__ u8 read, __UNUSED__ u8 write)
 {
   // Has the node got an open callback?
   if (node->open != 0) {
