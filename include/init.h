@@ -54,20 +54,9 @@ struct tss_entry_struct
   u32 cr3;
   u32 eip;
   u32 eflags;
-  u32 eax;
-  u32 ecx;
-  u32 edx;
-  u32 ebx;
-  u32 esp;
-  u32 ebp;
-  u32 esi;
-  u32 edi;
-  u32 es;         // The value to load into ES when we change to kernel mode.
-  u32 cs;         // The value to load into CS when we change to kernel mode.
-  u32 ss;         // The value to load into SS when we change to kernel mode.
-  u32 ds;         // The value to load into DS when we change to kernel mode.
-  u32 fs;         // The value to load into FS when we change to kernel mode.
-  u32 gs;         // The value to load into GS when we change to kernel mode.
+  u32 eax, ecx, edx, ebx; 
+  u32 esp, ebp, esi, edi;
+  u32 es, cs, ss, ds, fs, gs;
   u32 ldt;        // Unused...
   u16 trap;
   u16 iomap_base;
@@ -75,9 +64,9 @@ struct tss_entry_struct
 typedef struct tss_entry_struct tss_entry_t;
 
 struct pt_regs_t {
-  u32 gs, fs, es, ds;                  // Data segment selector
+  u32 gs, fs, es, ds;
   u32 edi, esi, ebp, esp, ebx, edx, ecx, eax; // Pushed by pusha.
-  u32 int_no, err_code;    // Interrupt number and error code (if applicable)
+  u32 int_no, err_code;             // Interrupt number and error code (if applicable)
   u32 eip, cs, eflags, useresp, ss; // Pushed by the processor automatically.
 };
 typedef struct pt_regs_t pt_regs;
@@ -120,7 +109,7 @@ struct cpu_struct {
 
 typedef void (*interrupt_handler_t)(pt_regs *);
 
-extern u8 kstack[2048];
+extern struct cpu_struct this_cpu;
 // These extern directives let us access the addresses of our ASM ISR handlers.
 extern void gdt_flush(u32);
 extern void idt_flush(u32);

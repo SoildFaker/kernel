@@ -32,8 +32,8 @@ extern mmap_entry_t *mmap;
 extern u32 *count;
 
 extern u32 kernel_stack[STACK_SIZE];
-extern u8 kernel_start[];
-extern u8 kernel_end[];
+extern u8 kernel_start_pos[];
+extern u8 kernel_end_pos[];
 
 // memoey page count
 extern u32 phy_page_count;

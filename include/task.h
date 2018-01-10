@@ -3,7 +3,7 @@
 
 #include "common.h"
 #include "page.h"
-#include "tty.h"
+#include "drivers/tty.h"
 
 #define PROC_SIZE 4096
 
