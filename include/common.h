@@ -8,30 +8,11 @@
 #define __INITDATA    __attribute__((section(".init.data")))
 #define __PACKED      __attribute__((packed))
 #define asmlinkage    __attribute__((regparm(0)))
-/* this panic just get into dead loop */
-#define  PANIC(info)                       \
-{                                          \
-  printk("KERNEL PANIC: %s\n", info);    \
-  while(1) ;                               \
-}                                          \
-
-#define  ERROR(info)                       \
-{                                          \
-  printk_color(COLOR_RED, COLOR_BLACK, "%s\n", info);    \
-}                                          \
-
-#define assert(x, info) \
-  do { \
-    if (!(x)) { \
-      PANIC(info); \
-    } \
-  } while (0)
+#define fastcall      __attribute__((regparm(3)))
 
 typedef unsigned char  u8;
 typedef unsigned short u16;
 typedef unsigned long  u32;
-
-void kmain(void);
 
 static inline void cli(void)
 {
