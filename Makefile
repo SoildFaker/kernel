@@ -6,19 +6,14 @@ INCLUDE = -I./include
 
 DISKIMG = ./80m.img
 OUTDIR = bin
-KNLDIR = kernel
-INITDIR = init
-DRIVERDIR = drivers
-MMDIR = mm
-BTLDIR = boot
 
-KNL_SRC = $(wildcard $(KNLDIR)/*.c) $(wildcard drivers/*.c) 
-KNL_SRC += $(wildcard $(MMDIR)/*.c)
-KNL_SRC += $(wildcard $(INITDIR)/*.c)
-KNL_ASM = $(wildcard $(KNLDIR)/*.s)
+EXCLUDE = -not -path "./boot/*" -not -path "./tools/*" -not -path "./fs/*"
+KNL_CSRC = $(shell find . -name "*.c" $(EXCLUDE))
+KNL_SSRC = $(shell find . -name "*.s" $(EXCLUDE))
 
-KNL_OBJ := $(addprefix $(OUTDIR)/,$(notdir $(KNL_SRC:.c=.o)))
-KNL_OBJ += $(addprefix $(OUTDIR)/,$(notdir $(KNL_ASM:.s=.o)))
+OBJS = $(shell find . -name "*.o")
+KNL_COBJ = $(patsubst %.c, %.o, $(KNL_CSRC))
+KNL_SOBJ = $(patsubst %.s, %.o, $(KNL_SSRC))
 
 KNL_LD = tools/kernel_link.ld
 BTL_LD = tools/loader_link.ld
@@ -29,53 +24,39 @@ ASFLAGS = --32
 KNL_LDFLAGS = -static -nostdlib --nmagic -melf_i386 
 BTL_LDFLAGS = -static -nostdlib --nmagic --oformat=binary -melf_i386 
 
+BTL_OBJ = ./boot/loaderasm.o ./boot/loadermain.o ./drivers/hd.o 
+
 all:clean $(OUTDIR)/boot.bin $(OUTDIR)/loader.bin $(OUTDIR)/kernel.elf dd test
 
 clean:
-	rm -rf $(OUTDIR)
+	rm -rf $(OUTDIR)/*
+	rm -rf $(OBJS)
 
-$(OUTDIR)/kernel.elf: $(KNL_OBJ)
-	$(LD) -T$(KNL_LD) $(KNL_LDFLAGS) $(KNL_OBJ) -o $(OUTDIR)/kernel.elf
+$(OUTDIR)/kernel.elf: $(KNL_COBJ) $(KNL_SOBJ)
+	$(LD) -T$(KNL_LD) $(KNL_LDFLAGS) $(KNL_COBJ) $(KNL_SOBJ) -o $(OUTDIR)/kernel.elf
 
-$(OUTDIR)/loader.bin: $(OUTDIR)/loaderasm.o $(OUTDIR)/loadermain.o
-	$(LD) -T$(BTL_LD) $(BTL_LDFLAGS) $(OUTDIR)/loaderasm.o $(OUTDIR)/loadermain.o -o $(OUTDIR)/loader.bin
+$(OUTDIR)/loader.bin: $(BTL_OBJ)
+	$(LD) -T$(BTL_LD) $(BTL_LDFLAGS) $(BTL_OBJ) -o $(OUTDIR)/loader.bin
 
-$(OUTDIR)/boot.bin: $(OUTDIR)/boot.o
-	$(LD) -Ttext 0x7c00 --oformat=binary $(OUTDIR)/boot.o -o $(OUTDIR)/boot.bin
+$(OUTDIR)/boot.bin: ./boot/boot.o
+	$(LD) -Ttext 0x7c00 --oformat=binary ./boot/boot.o -o $(OUTDIR)/boot.bin
 
 mkfs:
 	$(CC) tools/mkfs.c -o mkfs_kernel
 
-$(OUTDIR)/%.o: $(KNLDIR)/%.c 
-	@mkdir -p $(dir $@)
+$(KNL_COBJ): %.o: %.c
 	$(CC) $(GCFLAGS) -c $< -o $@
 
-$(OUTDIR)/%.o: $(MMDIR)/%.c
-	@mkdir -p $(dir $@)
-	$(CC) $(GCFLAGS) -c $< -o $@
-
-$(OUTDIR)/%.o: $(INITDIR)/%.c
-	@mkdir -p $(dir $@)
-	$(CC) $(GCFLAGS) -c $< -o $@
-
-$(OUTDIR)/%.o: $(DRIVERDIR)/%.c
-	@mkdir -p $(dir $@)
-	$(CC) $(GCFLAGS) -c $< -o $@
-
-$(OUTDIR)/%.o: $(KNLDIR)/%.s
-	@mkdir -p $(dir $@)
+$(KNL_SOBJ): %.o: %.s
 	$(AS) $(ASFLAGS) $< -o $@
 
-$(OUTDIR)/loadermain.o: $(BTLDIR)/loadermain.c
-	@mkdir -p $(dir $@)
+./boot/loadermain.o: ./boot/loadermain.c
 	$(CC) $(GCFLAGS) -c $< -o $@
 
-$(OUTDIR)/boot.o: $(BTLDIR)/boot.s
-	@mkdir -p $(dir $@)
+./boot/boot.o: ./boot/boot.s
 	$(AS) $< -o $@
 
-$(OUTDIR)/loaderasm.o: $(BTLDIR)/loaderasm.s
-	@mkdir -p $(dir $@)
+./boot/loaderasm.sasm.o: ./boot/loaderasm.s
 	$(AS) $(ASFLAGS) $< -o $@
 
 dd:
