@@ -22,16 +22,14 @@ static void readsect(void *dst, u32 offset)
   insl(0x1F0, dst, SECTOR_SIZE/4);
 }
 
-// Read ’count’ bytes at ’offset’ from kernel into physical address ’pa’.
+// Read ’count’ byte at ’offset’ sector from kernel into physical address ’pa’.
 // Might copy more than asked.
 void readseg(u8* pa, u32 count, u32 offset)
 {
   u8* epa;
   epa = pa + count;
-  // Round down to sector boundary.
   pa -= offset % SECTOR_SIZE;
-  // Translate from bytes to sectors; kernel starts at sector 1.
-  offset = (offset / SECTOR_SIZE) + 1;
+  offset = (offset / SECTOR_SIZE) ;
   // If this is too slow, we could read lots of sectors at a time.
   // We’d write more to memory than asked, but it doesn’t matter −−
   // we load in increasing order.
