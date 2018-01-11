@@ -5,6 +5,7 @@
 #include "task.h"
 #include "page.h"
 #include "test.h" // kernel test function
+#include "fs/myfs.h"
 #include "drivers/display.h"
 #include "drivers/timer.h"
 #include "drivers/keyboard.h"
@@ -44,7 +45,10 @@ void kernel_start(void)
 
   // allow interrupt
   sti();
-
+ 
+  init_myfs(0x20000+PAGE_OFFSET);
+  struct myfs_entry *tmp = find_file("kernel.elf");
+  printk("%s\n", tmp->entry_name);
   // print kernel task runs how many times
   while(1){
     printk("Proc Runs:%d\r", current->time_slice);

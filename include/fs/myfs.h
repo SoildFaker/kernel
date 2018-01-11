@@ -19,6 +19,6 @@ struct myfs_entry {
 
 void find_and_read(const char *name, u8 *dst);
 struct myfs_entry * find_file(const char *name);
-void init_myfs();
+void init_myfs(u32 table_offset);
 
 #endif

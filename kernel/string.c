@@ -24,17 +24,16 @@ inline void bzero(u8 *dest, u32 len)
 // str1 < str2, 0 if they are equal or 1 otherwise.
 inline int strcmp(const char *str1, const char *str2)
 {
-  while (*str1 && *str2 && (*str1++ == *str2++)) ;
+  while (*str1 && *str2 && (*str1++ == *str2++)){} 
 
   if (*str1 == '\0' && *str2 == '\0') {
     return 0;
   }
-
-	if (*str1 == '\0') {
+  if (*str1 == '\0') {
     return -1;
-	}
-	
-	return 1;
+  }
+
+  return 1;
 }
 
 // Copy the NULL-terminated string src into dest, and

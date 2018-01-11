@@ -62,7 +62,7 @@ $(KNL_SOBJ): %.o: %.s
 	$(AS) $(ASFLAGS) $< -o $@
 
 dd:
-	./mkfs_kernel bin/loader.bin loader.bin bin/kernel.elf kernel.elf &
+	./mkfs_kernel bin/loader.bin loader.bin bin/kernel.elf kernel.elf ./mkfs_kernel mkfs_kernel&
 	dd if=./$(OUTDIR)/boot.bin of=$(DISKIMG) obs=512 count=1 conv=notrunc
 	dd if=./$(OUTDIR)/loader.bin of=$(DISKIMG) obs=512 seek=1 conv=notrunc
 	dd if=./kernel.img of=$(DISKIMG) obs=512 seek=10 conv=notrunc

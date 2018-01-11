@@ -1,8 +1,7 @@
-#include "fs/myfs.h"
 #include "string.h"
+#include "fs/myfs.h"
 #include "drivers/hd.h"
 
-#define TABLE_START_MEM 0x20000
 struct myfs_entry *file_entry_table;
 
 void read_file_path(const char *path, u8 *dst)
@@ -39,16 +38,15 @@ READ_PATH:
   }
 }
 
+
 struct myfs_entry *
 find_file(const char *name)
 {
-  u8 i;
-  for (i = 0; i < 64; i++) {
-    if(!strcmp(file_entry_table[i].entry_name, name)) {
-      return &file_entry_table[i];
-    }
+  struct myfs_entry *tmp = file_entry_table;
+  while(strcmp(tmp->entry_name, name) != 0) {
+    tmp++;
   }
-  return &file_entry_table[0];
+  return tmp;
 }
 
 void find_and_read(const char *name, u8 *dst)
@@ -57,8 +55,8 @@ void find_and_read(const char *name, u8 *dst)
   readseg(dst, tmp->data_count*SECTOR_SIZE, tmp->data_sector*SECTOR_SIZE);
 }
 
-void init_myfs()
+void init_myfs(u32 table_offset)
 {
-  file_entry_table = (struct myfs_entry *)(TABLE_START_MEM);
+  file_entry_table = (struct myfs_entry *)(table_offset);
   readseg((u8 *)file_entry_table, sizeof(struct myfs_entry)*64, 10*SECTOR_SIZE);
 }

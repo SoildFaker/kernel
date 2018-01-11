@@ -42,7 +42,7 @@ start_32:
 
 # Set up the stack pointer and call into C.
   movl $start, %esp
-  call bootmain
+  call loadermain
 
 # If bootmain returns (it shouldn’t), trigger a Bochs
 # breakpoint if running under Bochs, then loop.
