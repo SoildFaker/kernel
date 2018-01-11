@@ -42,11 +42,13 @@ READ_PATH:
 struct myfs_entry *
 find_file(const char *name)
 {
-  struct myfs_entry *tmp = file_entry_table;
-  while(strcmp(tmp->entry_name, name) != 0) {
-    tmp++;
+  u8 i;
+  for (i = 0; i < 64; i++) {
+    if (strcmp(file_entry_table[i].entry_name, name) == 0) {
+      return &file_entry_table[i];
+    }
   }
-  return tmp;
+  return &file_entry_table[0];
 }
 
 void find_and_read(const char *name, u8 *dst)
