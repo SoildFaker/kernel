@@ -1,14 +1,5 @@
 # A-MINI-KERNEL
 
-TODO:
- - [x] Bootloader
- - [x] Protected Mode
- - [x] GDT INIT
- - [x] IDT INIT
- - [x] PAGING
- - [x] MEMORY MANAGEMENT
- - [x] TASK
- - [ ] DEV
- - [ ] FS
- - [ ] SHELLL
-
+## snapshot
+![p1QmEn.png](https://s1.ax1x.com/2018/01/11/p1QmEn.png)
+![p1QnNq.png](https://s1.ax1x.com/2018/01/11/p1QnNq.png)
