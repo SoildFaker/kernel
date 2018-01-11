@@ -33,7 +33,7 @@ load_disk:
   movw $0x0800, %ax       # move to 0x8000 in menory
   movw %ax, %es           # ES:BX point to buffer
   xor  %bx, %bx
-  movw $0x0200+2, %ax   # AH function index AL number of sector
+  movw $0x0200+9, %ax     # AH function index AL number of sector
   int  $0x13
   jnc  ok_loaded
 die:  jmp  die

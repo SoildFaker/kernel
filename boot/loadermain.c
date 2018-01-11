@@ -14,9 +14,10 @@ void loadermain(void)
   u8 *pa;
   elf = (elf_header_t *)(0x10000); // scratch space
   init_myfs(0x20000);
-  /*struct myfs_entry *tmp = find_file("kernel.elf");*/
-  struct myfs_entry *tmp = (struct myfs_entry *)(0x20000);
-  u32 elf_sector = tmp[1].data_sector;
+  struct myfs_entry *tmp = find_file("kernel.elf");
+
+  u32 elf_sector = tmp->data_sector;
+
   // Read elf header off disk 8 * 512
   readseg((u8 *)elf, 4096, elf_sector * SECTOR_SIZE);
 
