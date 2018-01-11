@@ -6,8 +6,11 @@
 #include "drivers/display.h"
 #include "tools.h"
 
-page_entry_t pdt_kernel[PAGE_TABLE_SIZE] __attribute__((aligned(PAGE_SIZE)));
-static page_entry_t pet_kernel[KPDT_COUNT][PAGE_TABLE_SIZE] __attribute__((aligned(PAGE_SIZE)));
+page_entry_t __attribute__((aligned(PAGE_SIZE)))
+pdt_kernel[PAGE_TABLE_SIZE];
+
+static page_entry_t __attribute__((aligned(PAGE_SIZE)))
+pet_kernel[KPDT_COUNT][PAGE_TABLE_SIZE];
 
 // Initilizing kernel page directory table
 // Mapping kernel space start at 0xC0000000
