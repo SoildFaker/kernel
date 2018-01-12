@@ -5,13 +5,14 @@
 
 #define DPL0 0
 #define DPL3 3
-#define GDT_ENTRY_NUM  5
+#define GDT_ENTRY_NUM  6
 #define IDT_ENTRY_NUM  256
 
 #define GDT_ENTRY_KERNEL_CS 1
 #define GDT_ENTRY_KERNEL_DS 2
 #define GDT_ENTRY_USER_CS   3
 #define GDT_ENTRY_USER_DS   4
+#define GDT_TSS_ENTRY       5
 
 #define __KERNEL_CS		(GDT_ENTRY_KERNEL_CS*8)
 #define __KERNEL_DS		(GDT_ENTRY_KERNEL_DS*8)
@@ -61,7 +62,6 @@ struct tss_entry_struct
   u16 trap;
   u16 iomap_base;
 } __PACKED;
-typedef struct tss_entry_struct tss_entry_t;
 
 struct pt_regs_t {
   u32 gs, fs, es, ds;
@@ -103,6 +103,7 @@ struct desc_ptr_struct
 struct cpu_struct {
   struct gdt_desc_struct gdt[GDT_ENTRY_NUM];
   struct desc_ptr_struct  gdt_ptr;
+  struct tss_entry_struct tss;
   struct idt_desc_struct idt[IDT_ENTRY_NUM];
   struct desc_ptr_struct  idt_ptr;
 };
@@ -113,12 +114,13 @@ extern struct cpu_struct this_cpu;
 // These extern directives let us access the addresses of our ASM ISR handlers.
 extern void gdt_flush(u32);
 extern void idt_flush(u32);
+extern void tss_flush();
 
-void irq_eoi(u32 nr);
 void irq_enable(u8 irq);
 void init_desc(void);
 void register_interrupt_handler(u8 n, interrupt_handler_t h);
-void irq_handler(pt_regs *regs);
+void int_handler(pt_regs *regs);
 void register_interrupt_handler(u8 n, interrupt_handler_t h);
+void set_kernel_stack(u32 esp);
 
 #endif
