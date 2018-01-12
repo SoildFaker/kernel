@@ -56,7 +56,7 @@ static void scroll()
   }
 }
 
-void display_putc(struct tty *tty, char c, u8 fg, u8 bg)
+void display_putc(u8 bg, u8 fg, struct tty *tty, char c)
 {
   u16 attribute = (u16)(fg | bg << 4)<<8;
 
@@ -90,14 +90,14 @@ void display_putc(struct tty *tty, char c, u8 fg, u8 bg)
 void display_print(const char *string)
 {
   while (*string) {
-    display_putc(tty_print, *string++, COLOR_WHITE, COLOR_BLACK);
+    display_putc(COLOR_BLACK, COLOR_WHITE, tty_print, *string++);
   }
 }
 
-void display_print_color(const char *string, u8 fg, u8 bg)
+void display_print_color(u8 bg, u8 fg, const char *string)
 {
   while (*string) {
-    display_putc(tty_print, *string++, fg, bg);
+    display_putc(bg, fg, tty_print, *string++);
   }
 }
 

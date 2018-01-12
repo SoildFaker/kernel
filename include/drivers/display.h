@@ -35,9 +35,9 @@ extern struct tty *tty_print;
 
 void flush_screen();
 void flush_line(u8);
-void display_print_color(const char *string, u8 fg, u8 bg);
+void display_print_color(u8 bg, u8 fg, const char *string);
 void display_print(const char *string);
-void display_putc(struct tty *tty, char c, u8 fg, u8 bg);
+void display_putc(u8 bg, u8 fg, struct tty *tty, char c);
 void display_print_hex(u32 num);
 
 #endif

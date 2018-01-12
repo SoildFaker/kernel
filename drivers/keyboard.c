@@ -174,7 +174,7 @@ void keyboard_callback()
       if (scancode < TTY_NUMBER+2) switch_tty(&tty[scancode-2]);
       return;
     }
-    display_putc(tty_cur, scancodes[scancode], COLOR_GREEN, COLOR_BLACK);
+    display_putc(COLOR_BLACK, COLOR_GREEN, tty_cur, scancodes[scancode]);
   }
 }
 

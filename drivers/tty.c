@@ -43,6 +43,7 @@ void init_tty()
 // Didn't know the reason
 void switch_tty(struct tty *tty)
 {
+  if (tty_cur == tty) return;
   tty_cur = tty;
   set_video_start_addr(tty->offset>>1);
 }
