@@ -1,5 +1,22 @@
 .code32
 
+.global enter_user_mode
+enter_user_mode:
+  popl %ebx
+  mov $0x23, %ax 
+  mov %ax, %ds 
+  mov %ax, %es 
+  mov %ax, %fs 
+  mov %ax, %gs 
+
+  mov %esp, %eax
+  pushl $0x23
+  pushl %eax 
+  pushf 
+  pushl $0x1B 
+  pushl %ebx
+  iret
+
 .global switch_task
 switch_task:
 # save current content
@@ -33,6 +50,16 @@ switch_task:
   push (%eax)
   ret
 
+.global tss_flush    # Allows our C code to call tss_flush().
+tss_flush:
+# Load the index of our TSS structure - The index is
+# 0x28, as it is the 5th selector and each is 8 bytes
+# long, but we set the bottom two bits (making 0x2B)
+# so that it has an RPL of 3, not zero.
+  mov $0x2B, %ax
+  ltr %ax            # Load 0x2B into the task state register.
+  ret
+
 .global gdt_flush
 gdt_flush:
   movl 4(%esp), %eax    # give a parameter (gdt_table entry address)
@@ -53,7 +80,7 @@ idt_flush:
     cli                          # Disable interrupts firstly.
     pushl  $0                    # Push a dummy error code.
     pushl  $\code                # Push the interrupt number.
-    jmp irq_common_stub          # Go to our common handler code.
+    jmp int_common_stub          # Go to our common handler code.
 .endm
 
 
@@ -66,7 +93,7 @@ idt_flush:
     cli                         # Disable interrupts firstly.
     pushl  $0                    # Push a dummy error code.
     pushl  $\code                 # Push the interrupt number.
-    jmp irq_common_stub         # Go to our common handler code.
+    jmp int_common_stub         # Go to our common handler code.
 .endm
 
 # This macro creates a stub for an ISR which passes it's own
@@ -77,23 +104,21 @@ idt_flush:
   isr\code:
     cli                         # Disable interrupts.
     pushl $\code                 # Push the interrupt number
-    jmp irq_common_stub
+    jmp int_common_stub
 .endm
 # In init.c
-.extern irq_handler
+.extern int_handler
 
 # This is our common stub. It saves the processor state, sets
 # up for kernel mode segments, calls the C-level fault handler,
 # and finally restores the stack frame.
-irq_common_stub:
+int_common_stub:
   pusha                    # Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
 
   push %ds
   push %es
   push %fs
   push %gs
-  #movw  %ds, %ax             # Lower 16-bits of eax = ds.
-  #pushl %eax                 # save the data segment descriptor
 
   movw $0x10, %ax  # load the kernel data segment descriptor
   movw %ax, %ds
@@ -102,12 +127,10 @@ irq_common_stub:
   movw %ax, %fs
 
   pushl %esp
-  call irq_handler
+  call int_handler
   addl $4, %esp
 
-  #popl %ebx        # reload the original data segment descriptor
-  #movw %bx, %ds
-
+stub_ret:
   pop %gs
   pop %fs
   pop %es
@@ -149,6 +172,7 @@ ISR_NOERRCODE 28
 ISR_NOERRCODE 29
 ISR_NOERRCODE 30
 ISR_NOERRCODE 31
+ISR_NOERRCODE 128
 ISR_NOERRCODE 255
 
 
