@@ -3,7 +3,7 @@
 #include "page.h"
 #include "init.h"
 
-u32 kernel_stack[STACK_SIZE];
+u32 kernel_stack[KERNEL_STACK_SIZE];
 mmap_entry_t *mmap = (mmap_entry_t *)(0x1000 + PAGE_OFFSET);
 u32 *count = (u32 *)(0x500 + PAGE_OFFSET);
 

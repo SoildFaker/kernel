@@ -18,21 +18,23 @@ void init_page()
 {
   u32 i,j;
   u32 kpdt_start = PDT_INDEX(PAGE_OFFSET);
-  for (i=kpdt_start, j=0; i<kpdt_start + KPDT_COUNT; i++, j++) {
-    pdt_kernel[i].base = ((u32)pet_kernel[j] - PAGE_OFFSET) >> 12;
-    pdt_kernel[i].flags = PG_WRITE | PG_PRESENT;
+  for (i=kpdt_start, j=0; i < (kpdt_start + KPDT_COUNT); i++, j++) {
+    pdt_kernel[i].base = ((u32)&pet_kernel[j] - PAGE_OFFSET) >> 12;
+    pdt_kernel[i].flags = PG_WRITE | PG_PRESENT | PG_USER;
   }
 
   page_entry_t *pet = *pet_kernel;
   for (i=0; i < KPDT_SIZE; i++) {
     pet[i].base = i;
-    pet[i].flags = PG_WRITE | PG_PRESENT;
+    pet[i].flags = PG_WRITE | PG_PRESENT | PG_USER;
   }
+
+  // Registered page fault handler
   register_interrupt_handler(14, (interrupt_handler_t)page_fault);
 
+  // Switch kernel page directory table
   u32 pdt_kernel_phy_addr = (u32)pdt_kernel - PAGE_OFFSET;
   switch_pdt(pdt_kernel_phy_addr);
-  /*enable_page();*/
 }
 
 void switch_pdt(u32 pdt_addr)

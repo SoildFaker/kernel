@@ -5,7 +5,8 @@
 #include "page.h"
 
 // stack size of thread
-#define STACK_SIZE      2048
+#define USER_STACK_SIZE      2048
+#define KERNEL_STACK_SIZE    2048
 #define HEAP_START      0xE0000000
 // max memory
 #define MEMORY_SIZE     0x04000000
@@ -31,7 +32,7 @@ typedef struct memory_header memory_header_t;
 extern mmap_entry_t *mmap;
 extern u32 *count;
 
-extern u32 kernel_stack[STACK_SIZE];
+extern u32 kernel_stack[KERNEL_STACK_SIZE];
 extern u8 kernel_start_pos[];
 extern u8 kernel_end_pos[];
 

@@ -14,11 +14,11 @@
 #define  PAGE_MASK    0xFFFFF000
 #define  PAGE_OFFSET  0xC0000000
 
-#define  KPDT_COUNT   8
-#define  PAGE_TABLE_SIZE 1024
-#define  KPDT_SIZE    KPDT_COUNT * PAGE_TABLE_SIZE
-#define  KERNV_START  0x100000
-#define  KERNP_START  0x100000
+#define  KPDT_COUNT       16
+#define  PAGE_TABLE_SIZE  1024
+#define  KPDT_SIZE        (KPDT_COUNT * PAGE_TABLE_SIZE)
+#define  KERNV_START      0x100000
+#define  KERNP_START      0x100000
 
 // get page directory index
 #define PDT_INDEX(x) (((x) >> 22) & 0x3FF)
