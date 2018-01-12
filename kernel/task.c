@@ -5,6 +5,7 @@
 #include "common.h"
 #include "debug.h"
 
+extern void enter_user_mode();
 u32 pid_now = 0;
 
 struct task_list *running_task_head = NULL;
@@ -29,7 +30,7 @@ void init_task()
   current->context = (struct context *)kmalloc(sizeof(struct context));
 
   current->state = RUNNABLE;
-  current->kstack = &kernel_stack;
+  current->kernel_stack = &kernel_stack;
   current->time_slice = 50;
   current->pid = pid_now++; // kernel pid is 0
   current->mm = NULL;       // do not need this for kernel
@@ -65,6 +66,9 @@ void switch_to(struct task *next)
     prev->state = RUNNABLE;
     next->state = RUNNING;
     tty_print = next->tty;
+    // Change our kernel stack over.
+    set_kernel_stack((u32)current->kernel_stack+KERNEL_STACK_SIZE);
+    
     switch_task(prev->context, current->context);
   }
 }
@@ -74,18 +78,18 @@ u32 kthread_start(u32 (*fn)(void *), struct tty *tty,u8 priority, void *arg)
 {
   struct task *new_task = (struct task *)kmalloc(sizeof(struct task));
   new_task->context = (struct context *)kmalloc(sizeof(struct context));
-  u32 *pstack = (u32 *)kmalloc(STACK_SIZE);
-  assert(new_task != NULL, "kern_thread: kmalloc error");
+  u32 *pstack = (u32 *)kmalloc(KERNEL_STACK_SIZE);
+  assert(pstack != NULL, "kern_thread: kmalloc error");
 
   new_task->state = RUNNABLE;
   new_task->priority = priority;
   new_task->time_slice = priority * 5;
-  new_task->kstack = kernel_stack;
+  new_task->kernel_stack = pstack;
   new_task->pid = pid_now++;
   new_task->mm = NULL;
   new_task->tty = tty;
 
-  u32 *stack_top = (u32 *)((u32)pstack + STACK_SIZE);
+  u32 *stack_top = (u32 *)((u32)pstack + KERNEL_STACK_SIZE);
 
   *(--stack_top) = (u32)arg;
   *(--stack_top) = (u32)kthread_exit;
@@ -121,22 +125,9 @@ void kthread_exit(u32 val)
 
 void switch_to_user_mode()
 {
+  // Set up our kernel stack.
+  set_kernel_stack((u32)(current->kernel_stack)+KERNEL_STACK_SIZE);
+
   // Set up a stack structure for switching to user mode.
-  asm volatile("  \
-      cli; \
-      mov $0x23, %ax; \
-      mov %ax, %ds; \
-      mov %ax, %es; \
-      mov %ax, %fs; \
-      mov %ax, %gs; \
-      \
-      mov %esp, %eax; \
-      pushl $0x23; \
-      pushl %eax; \
-      pushf; \
-      pushl $0x1B; \
-      push $1f; \
-      iret; \
-      1: \
-      ");
+  enter_user_mode();
 }

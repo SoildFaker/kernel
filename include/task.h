@@ -29,7 +29,7 @@ struct task {
   u32 pid;
   volatile u32 time_slice;
   u8 priority;
-  void *kstack;                 // Bottom of kernel stack of this taskess
+  void *kernel_stack;                 // Bottom of kernel stack of this taskess
   enum taskstate state;         // Process state
   struct mm_struct *mm;         // task memory space
   struct tty *tty;
@@ -50,6 +50,8 @@ extern struct task *current;
 extern u32 pid_now;
 
 extern void switch_task(struct context *next, struct context *current);
+
+void switch_to_user_mode();
 u32  kthread_start(u32 (*fn)(void *), struct tty *tty, u8 priority, void *arg);
 void kthread_exit(u32 val);
 void init_task();
