@@ -4,6 +4,7 @@
 #include "mm.h"
 #include "task.h"
 #include "page.h"
+#include "syscall.h"
 #include "test.h" // kernel test function
 #include "fs/myfs.h"
 #include "drivers/display.h"
@@ -16,16 +17,16 @@ static void print_info();
 
 void kernel_start(void)
 {
-  // kernel state init
+  // kernel state initialising
   // no print function here
   init_desc();
   init_stack();
 
-  // print function inited
+  // print function initialized
   init_tty();
   flush_screen();
 
-  // memory management inited
+  // memory management initialized
   init_page();
   init_pmm();
 
@@ -34,14 +35,19 @@ void kernel_start(void)
 
   // multi task init
   init_task();
-  kthread_start(task_idle, &tty[0], 10, NULL);
-  kthread_start(test_a, &tty[1], 2, NULL);
-  kthread_start(test_b, &tty[2], 3, NULL);
-  kthread_start(test_c, &tty[3], 4, NULL);
-  
+
+  // initialises system call
+  init_syscall();
+
   // interrupt handler registed
   init_keyboard();
   init_timer(200);     // schedule() here
+
+  kthread_start(task_idle, &tty[0], 10, NULL);
+  /*kthread_start(test_a, &tty[1], 2, NULL);*/
+  kthread_start(test_b, &tty[2], 3, NULL);
+  kthread_start(test_c, &tty[3], 4, NULL);
+  
 
   // allow interrupt
   sti();

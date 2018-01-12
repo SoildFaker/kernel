@@ -30,7 +30,7 @@ void printk_color(u8 fore, u8 back, const char *format, ...)
 
 	buff[i] = '\0';
 
-	display_print_color(buff, fore, back);
+	display_print_color(back, fore, buff);
 }
 
 static int skip_atoi(const char **s)
