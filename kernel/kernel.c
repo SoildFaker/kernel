@@ -5,12 +5,14 @@
 #include "task.h"
 #include "page.h"
 #include "syscall.h"
-#include "test.h" // kernel test function
+#include "vfs.h"
 #include "fs/myfs.h"
 #include "drivers/display.h"
 #include "drivers/timer.h"
 #include "drivers/keyboard.h"
 #include "drivers/tty.h"
+
+#include "test.h" // kernel test function
 
 static inline void init_stack();
 static void print_info();
@@ -28,13 +30,16 @@ void kernel_start(void)
 
   // memory management initialized
   init_page();
-  init_pmm();
+  init_page_stack();
 
   // print system info
   print_info();
 
   // multi task init
   init_task();
+
+  // filesystem init
+  fs_root = init_vfs();
 
   // initialises system call
   init_syscall();
@@ -43,24 +48,18 @@ void kernel_start(void)
   init_keyboard();
   init_timer(200);     // schedule() here
 
-  kthread_start(task_idle, &tty[0], 10, NULL);
-  /*kthread_start(test_a, &tty[1], 2, NULL);*/
-  kthread_start(test_b, &tty[2], 3, NULL);
+  kthread_start(task_idle, &tty[0], 1, NULL);
+  kthread_start(test_a, &tty[1], 2, NULL);
+  kthread_start(test_b, &tty[2], 1, NULL);
   kthread_start(test_c, &tty[3], 4, NULL);
-  
 
-  // allow interrupt
+  // enable interrupt
   sti();
- 
-  init_myfs(0x20000+PAGE_OFFSET);
-  struct myfs_entry *tmp = find_file("kernel.elf");
-  printk("%s\nstart:%d\tlength:%d\n", tmp->entry_name, tmp->data_sector, tmp->data_count);
-  // print kernel task runs how many times
-  while(1){
-    printk("Proc Runs:%d\r", current->time_slice);
-  }
-  asm volatile("hlt");
 
+  while(1){
+  }
+ 
+  hlt();
 }
 
 static inline void init_stack()
