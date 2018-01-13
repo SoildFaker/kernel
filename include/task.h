@@ -53,7 +53,7 @@ extern void switch_task(struct context *next, struct context *current);
 
 void switch_to_user_mode();
 u32  kthread_start(u32 (*fn)(void *), struct tty *tty, u8 priority, void *arg);
-void kthread_exit(u32 val);
+void kthread_exit();
 void init_task();
 void schedule();
 void switch_to(struct task *next);

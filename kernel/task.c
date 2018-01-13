@@ -74,7 +74,7 @@ void switch_to(struct task *next)
 }
 
 // Create kernel taskess
-u32 kthread_start(u32 (*fn)(void *), struct tty *tty,u8 priority, void *arg)
+u32 kthread_start(u32 (*fn)(void *), struct tty *tty, u8 priority, void *arg)
 {
   struct task *new_task = (struct task *)kmalloc(sizeof(struct task));
   new_task->context = (struct context *)kmalloc(sizeof(struct context));
@@ -115,12 +115,13 @@ u32 kthread_start(u32 (*fn)(void *), struct tty *tty,u8 priority, void *arg)
   return new_task->pid;
 }
 
-void kthread_exit(u32 val)
+void kthread_exit()
 {
-  /*u32 val; asm ("movl %%eax, %0\n" :"=m"(val));*/
-  printk("Thread exited with value %d\n", val);
+  u32 val;
+  asm volatile ("movl %%eax, %0\n" :"=m"(val));
+  printk("Thread exited with value 0x%x\n", val);
 
-  while (1);
+  while(1);
 }
 
 void switch_to_user_mode()
