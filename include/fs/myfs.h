@@ -5,20 +5,24 @@
 
 #define CLUSTER_SIZE 512
 
-#define FS_DIR  0
-#define FS_FILE 1
+#define MYFS_MAGIC   0xEB001234
+#define MYFS_DIR  1
+#define MYFS_FILE 2
+
+struct myfs_struct {
+  u32 magic;
+  u32 entry_num;
+};
 
 struct myfs_entry {
+  u8   entry_type;        // 0 = Unused otherwise 1 = Dir or 2 = File
   char entry_name[16];
-  u8   entry_type;
+  u32  entry_attribute;
   u32  child_head_index;
   u32  next_index;
   u32  data_sector;
   u32  data_count;
+  u32  data_size;
 };
-
-void find_and_read(const char *name, u8 *dst);
-struct myfs_entry * find_file(const char *name);
-void init_myfs(u32 table_offset);
 
 #endif
