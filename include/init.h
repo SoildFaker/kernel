@@ -16,8 +16,8 @@
 
 #define __KERNEL_CS		(GDT_ENTRY_KERNEL_CS*8)
 #define __KERNEL_DS		(GDT_ENTRY_KERNEL_DS*8)
-#define __USER_DS			(GDT_ENTRY_DEFAULT_USER_DS*8 + 3)
-#define __USER_CS			(GDT_ENTRY_DEFAULT_USER_CS*8 + 3)
+#define __USER_DS			(GDT_ENTRY_USER_DS*8 + 3)
+#define __USER_CS			(GDT_ENTRY_USER_CS*8 + 3)
 
 #define DEC_KERNEL_CS 0xc09a
 #define DEC_KERNEL_DS 0xc092
