@@ -2,7 +2,7 @@
 # Configuration file for bochs
 #
 
-megs: 32
+megs: 64
 
 romimage: file=/usr/local/share/bochs/BIOS-bochs-latest
 vgaromimage: file=/usr/local/share/bochs/VGABIOS-lgpl-latest
