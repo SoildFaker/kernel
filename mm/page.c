@@ -59,8 +59,8 @@ void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
   pet_now = (page_entry_t *)((u32)pdt_now[pdt_index].base << 12);
   // if the PET not present
   if (!pet_now) {
-    pet_now = (page_entry_t *)pmm_alloc_page();
-    pdt_now[pdt_index].base = (u32)pet_now >> 12;
+    pet_now = (page_entry_t *)page_alloc();
+    pdt_now[pdt_index].base = (u32)(pet_now) >> 12;
     pdt_now[pdt_index].flags = PG_WRITE | PG_PRESENT;
     // Switch to kernel space
     pet_now = (page_entry_t *)((u32)pet_now + PAGE_OFFSET);
@@ -152,5 +152,5 @@ void page_fault(pt_regs *regs)
   if (regs->err_code & (1 << 5)) {
     ERROR("Protection keys block access");
   }
-  while(1);
+  hlt();
 }

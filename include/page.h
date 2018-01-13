@@ -10,6 +10,7 @@
 #define  PG_ACCESSED  0x020
 #define  PG_DIRTY     0x040
 #define  PG_SIZE      0x080
+
 #define  PAGE_SIZE    0x1000
 #define  PAGE_MASK    0xFFFFF000
 #define  PAGE_OFFSET  0xC0000000

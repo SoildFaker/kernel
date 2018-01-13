@@ -1,4 +1,5 @@
 #include "mm.h"
+#include "debug.h"
 #include "tools.h"
 #include "page.h"
 #include "init.h"
@@ -14,27 +15,26 @@ static void split_chunk(memory_header_t *chunk, u32 len);
 static void glue_chunk(memory_header_t *chunk);
 
 static u32 heap_max = HEAP_START;
+static u32 page_stack[PAGE_STACK_SIZE];
+static u32 page_stack_top = 0;
 
-static u32 pmm_stack[PAGE_MAX_NUM];
-static u32 pmm_stack_top = 0;
-u32 phy_page_count;
-
-void init_pmm()
+void init_page_stack()
 {
   mmap_entry_t *map_entry = mmap;
 
   u8 i;
-  for (i = 1; i < *count; i++){
+  for (i = 1; i < *count; i++) {
     // If this memory section are usable
-    if ((map_entry+i)->type == 0x1){
+    if ((map_entry+i)->type == 0x1) {
       // store these usable memory page to page mangement stack
       u32 page_addr = (map_entry+i)->base_low;
       u32 length = (map_entry+i)->base_low + (map_entry+i)-> length_low;
 
       while (page_addr < length && page_addr <= MEMORY_SIZE) {
-        if (page_addr < (u32)kernel_start_pos || page_addr > (u32)kernel_end_pos + 0x1000){
-          pmm_free_page(page_addr);
-          phy_page_count++;
+        if (page_addr < (u32)kernel_start_pos || 
+            page_addr > (u32)kernel_end_pos + 0x1000)
+        {
+          page_free(page_addr);
         }
         page_addr += PAGE_SIZE;
       }
@@ -42,15 +42,16 @@ void init_pmm()
   }
 }
 
-u32 pmm_alloc_page()
+u32 page_alloc()
 {
-  u32 page = pmm_stack[pmm_stack_top--];
+  assert(page_stack_top > 0, "out of memory");
+  u32 page = page_stack[page_stack_top--];
   return page;
 }
 
-void pmm_free_page(u32 p)
+void page_free(u32 p)
 {
-  pmm_stack[++pmm_stack_top] = p;
+  page_stack[++page_stack_top] = p;
 }
 
 void *kmalloc(u32 len)
@@ -80,8 +81,8 @@ void *kmalloc(u32 len)
     heap_first = (memory_header_t *)chunk_start;
   }
   // need for a new page?
-  alloc_chunk(chunk_start , len);
-  header_cur = (memory_header_t *)chunk_start;
+  alloc_chunk(chunk_start, len);
+  header_cur = (memory_header_t *)(chunk_start);
   header_cur->prev = header_prev;
   header_cur->next = 0;
   header_cur->allocated = 1;
@@ -109,7 +110,7 @@ void alloc_chunk(u32 start, u32 len)
   // 如果当前堆的位置已经到达界限则申请内存页
   // 必须循环申请内存页直到有到足够的可用内存
   while (start + len > heap_max) {
-    u32 page = pmm_alloc_page();
+    u32 page = page_alloc();
     map(pdt_kernel, heap_max, page, PG_PRESENT | PG_WRITE);
     heap_max += PAGE_SIZE;
   }
@@ -129,13 +130,13 @@ void free_chunk(memory_header_t *chunk)
     u32 page;
     get_mapping(pdt_kernel, heap_max, &page);
     unmap(pdt_kernel, heap_max);
-    pmm_free_page(page);
+    page_free(page);
   }
 }
 
 void split_chunk(memory_header_t *chunk, u32 len)
 {
-// 切分内存块之前得保证之后的剩余内存至少容纳一个内存管理块的大小
+  // 切分内存块之前得保证之后的剩余内存至少容纳一个内存管理块的大小
   if (chunk->length - len > sizeof (memory_header_t)) {
     memory_header_t *newchunk = (memory_header_t *)((u32)chunk + chunk->length);
     newchunk->prev = chunk;
