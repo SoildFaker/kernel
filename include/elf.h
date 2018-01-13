@@ -46,4 +46,5 @@ typedef struct elf_section_header elf_section_header_t;
 #define ELF_PROG_FLAG_WRITE   2
 #define ELF_PROG_FLAG_READ    4
 
+void *disk_read_elf(struct elf_header *header, u32 header_offset);
 #endif
