@@ -1,11 +1,8 @@
-// fs.c -- Defines the interface for and structures relating to the virtual file system.
-// Written for JamesM's kernel development tutorials.
-
 #include "fs.h"
 
-fs_node_t *fs_root = 0; // The root of the filesystem.
+struct fs_node *fs_root = 0; // The root of the filesystem.
 
-u32 read_fs(fs_node_t *node, u32 offset, u32 size, u8 *buffer)
+u32 read_fs(struct fs_node *node, u32 offset, u32 size, u8 *buffer)
 {
   // Has the node got a read callback?
   if (node->read != 0) {
@@ -15,7 +12,7 @@ u32 read_fs(fs_node_t *node, u32 offset, u32 size, u8 *buffer)
   }
 }
 
-u32 write_fs(fs_node_t *node, u32 offset, u32 size, u8 *buffer)
+u32 write_fs(struct fs_node *node, u32 offset, u32 size, u8 *buffer)
 {
   // Has the node got a write callback?
   if (node->write != 0) {
@@ -25,7 +22,7 @@ u32 write_fs(fs_node_t *node, u32 offset, u32 size, u8 *buffer)
   }
 }
 
-void open_fs(fs_node_t *node, __UNUSED__ u8 read, __UNUSED__ u8 write)
+void open_fs(struct fs_node *node, __UNUSED__ u8 read, __UNUSED__ u8 write)
 {
   // Has the node got an open callback?
   if (node->open != 0) {
@@ -33,7 +30,7 @@ void open_fs(fs_node_t *node, __UNUSED__ u8 read, __UNUSED__ u8 write)
   }
 }
 
-void close_fs(fs_node_t *node)
+void close_fs(struct fs_node *node)
 {
   // Has the node got a close callback?
   if (node->close != 0) {
@@ -41,7 +38,7 @@ void close_fs(fs_node_t *node)
   }
 }
 
-struct dirent *readdir_fs(fs_node_t *node, u32 index)
+struct dirent *readdir_fs(struct fs_node *node, u32 index)
 {
   // Is the node a directory, and does it have a callback?
   if ( (node->flags&0x7) == FS_DIRECTORY && node->readdir != 0 ) {
@@ -51,7 +48,7 @@ struct dirent *readdir_fs(fs_node_t *node, u32 index)
   }
 }
 
-fs_node_t *finddir_fs(fs_node_t *node, char *name)
+struct fs_node *finddir_fs(struct fs_node *node, char *name)
 {
   // Is the node a directory, and does it have a callback?
   if ( (node->flags&0x7) == FS_DIRECTORY && node->finddir != 0 ) {

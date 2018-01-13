@@ -11,14 +11,16 @@
 #define FS_SYMLINK     0x06
 #define FS_MOUNTPOINT  0x08 // Is the file an active mountpoint?
 
-typedef u32 (*read_type_t)(struct fs_node*,u32,u32,u8*);
-typedef u32 (*write_type_t)(struct fs_node*,u32,u32,u8*);
-typedef void (*open_type_t)(struct fs_node*);
-typedef void (*close_type_t)(struct fs_node*);
-typedef struct dirent * (*readdir_type_t)(struct fs_node*,u32);
-typedef struct fs_node * (*finddir_type_t)(struct fs_node*,char *name);
+struct fs_node;
 
-typedef struct fs_node {
+typedef              u32 (*fn_read_fs)    (struct fs_node*,u32,u32,u8*);
+typedef              u32 (*fn_write_fs)   (struct fs_node*,u32,u32,u8*);
+typedef             void (*fn_open_fs)    (struct fs_node*);
+typedef             void (*fn_close_fs)   (struct fs_node*);
+typedef  struct dirent * (*fn_readdir_fs) (struct fs_node*,u32);
+typedef struct fs_node * (*fn_finddir_fs) (struct fs_node*,char *name);
+
+struct fs_node {
   char name[128]; // The filename
   u32 mask;       // The permissions mask
   u32 uid;        // The owner's id
@@ -27,14 +29,14 @@ typedef struct fs_node {
   u32 inode;      // This is device-specific - provided a way for a fs to indentify files
   u32 length;     // Size of the file by byte
   u32 impl;       // An implementation-defined number
-  read_type_t read;
-  write_type_t write;
-  open_type_t open;
-  close_type_t close;
-  readdir_type_t readdir;
-  finddir_type_t finddir;
+  fn_read_fs read;
+  fn_write_fs write;
+  fn_open_fs open;
+  fn_close_fs close;
+  fn_readdir_fs readdir;
+  fn_finddir_fs finddir;
   struct fs_node *ptr; // used by mountpoints and symlinks
-} fs_node_t;
+};
 
 // One of these is returned by the readdir call, according to POSIX.
 struct dirent
@@ -43,16 +45,16 @@ struct dirent
   u32 ino;        // Inode number. Required by POSIX.
 };
 
-extern fs_node_t *fs_root; // The root of the filesystem.
+extern struct fs_node *fs_root; // The root of the filesystem.
 
 // Standard read/write/open/close functions. Note that these are all suffixed with
 // _fs to distinguish them from the read/write/open/close which deal with file descriptors
 // not file nodes.
-u32 read_fs(fs_node_t *node, u32 offset, u32 size, u8 *buffer);
-u32 write_fs(fs_node_t *node, u32 offset, u32 size, u8 *buffer);
-void open_fs(fs_node_t *node, u8 read, u8 write);
-void close_fs(fs_node_t *node);
-struct dirent *readdir_fs(fs_node_t *node, u32 index);
-fs_node_t *finddir_fs(fs_node_t *node, char *name);
+u32 read_fs(struct fs_node *node, u32 offset, u32 size, u8 *buffer);
+u32 write_fs(struct fs_node *node, u32 offset, u32 size, u8 *buffer);
+void open_fs(struct fs_node *node, u8 read, u8 write);
+void close_fs(struct fs_node *node);
+struct dirent *readdir_fs(struct fs_node *node, u32 index);
+struct fs_node *finddir_fs(struct fs_node *node, char *name);
 
 #endif
