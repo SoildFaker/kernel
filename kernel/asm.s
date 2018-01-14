@@ -130,7 +130,8 @@ int_common_stub:
   call int_handler
   addl $4, %esp
 
-stub_ret:
+.global int_ret_stub
+int_ret_stub:
   pop %gs
   pop %fs
   pop %es
