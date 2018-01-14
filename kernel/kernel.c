@@ -51,12 +51,14 @@ void kernel_start(void)
   kthread_start(task_idle, &tty[0], 1, NULL);
   kthread_start(test_a, &tty[1], 2, NULL);
   kthread_start(test_b, &tty[2], 1, NULL);
-  kthread_start(test_c, &tty[3], 4, NULL);
+  kthread_start(test_c, &tty[2], 3, NULL);
+  kthread_start(test_d, &tty[3], 4, NULL);
 
   // enable interrupt
   sti();
 
-  while(1){
+  printf("running ...\n");
+  while(1) {
   }
  
   hlt();

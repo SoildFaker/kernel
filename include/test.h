@@ -4,6 +4,7 @@
 #include "fs.h"
 #include "vfs.h"
 #include "syscall.h"
+#include "drivers/timer.h"
 
 u32 test_a(__UNUSED__ void *arg)
 {
@@ -31,22 +32,41 @@ u32 test_a(__UNUSED__ void *arg)
   return 0;
 }
 
+u32 test_d(__UNUSED__ void *args)
+{
+  int a = 0;
+  //switch_to_user_mode();
+  a = fork();
+  if (a == 0){
+    printf("child running ...\n");
+  } else {
+    printf("parent running ...\nchild id:%d\n", a);
+  }
+  while(1);
+
+  return 0;
+}
+
 u32 test_c(__UNUSED__ void *arg)
 {
-  static u32 t = 0;
+  u32 t = 0;
   while(1){
-    printk_color(COLOR_RED, COLOR_BLACK, "C:%d\n", t);
-    t++;
+    t = tick + 10;
+    display_print_color(COLOR_BLACK, COLOR_RED, "C");
+    while(tick < t){ 
+    }
   }
   return 0;
 }
 
 u32 test_b(__UNUSED__ void *arg)
 {
-  static u32 t = 0;
+  u32 t = 0;
   while(1){
-    printk_color(COLOR_RED, COLOR_BLACK, "B:%d\n", t);
-    t++;
+    t = tick + 10;
+    display_print_color(COLOR_BLACK, COLOR_GREEN, "B");
+    while(tick < t){
+    }
   }
   return 0;
 }
