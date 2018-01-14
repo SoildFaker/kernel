@@ -10,7 +10,7 @@ u32 pid_now = 0;
 
 struct task_list *running_task_head = NULL;
 struct task_list *wait_task_head = NULL;
-struct task *current = NULL;
+struct task_struct *current = NULL;
 
 // System idle task
 // save power
@@ -26,8 +26,8 @@ void init_task()
 {
   running_task_head = (struct task_list *)kmalloc(sizeof(struct task_list));
   // current is kernel thread
-  current = (struct task *)kmalloc(sizeof(struct task));
-  current->context = (struct context *)kmalloc(sizeof(struct context));
+  current = (struct task_struct *)kmalloc(sizeof(struct task_struct));
+  current->context = (struct task_context *)kmalloc(sizeof(struct task_context));
 
   current->state = RUNNABLE;
   current->kernel_stack = &kernel_stack;
@@ -58,46 +58,43 @@ void schedule()
   }
 }
 
-void switch_to(struct task *next)
+void switch_to(struct task_struct *next)
 {
   if (current != next) {
-    struct task *prev = current;
+    struct task_struct *prev = current;
     current = next;
     prev->state = RUNNABLE;
     next->state = RUNNING;
     tty_print = next->tty;
     // Change our kernel stack over.
     set_kernel_stack((u32)current->kernel_stack+KERNEL_STACK_SIZE);
-    
     switch_task(prev->context, current->context);
   }
 }
 
-// Create kernel taskess
-u32 kthread_start(u32 (*fn)(void *), struct tty *tty, u8 priority, void *arg)
+// New task allocated
+struct task_struct *alloc_task()
 {
-  struct task *new_task = (struct task *)kmalloc(sizeof(struct task));
-  new_task->context = (struct context *)kmalloc(sizeof(struct context));
-  u32 *pstack = (u32 *)kmalloc(KERNEL_STACK_SIZE);
-  assert(pstack != NULL, "kern_thread: kmalloc error");
+  struct task_struct *new_task = 
+    (struct task_struct *)kmalloc(sizeof(struct task_struct));
+  new_task->context = 
+    (struct task_context *)kmalloc(sizeof(struct task_context));
+  u32 *kstack = (u32 *)kmalloc(KERNEL_STACK_SIZE);
+  assert(kstack != NULL, "kern_thread: kmalloc error");
 
-  new_task->state = RUNNABLE;
-  new_task->priority = priority;
-  new_task->time_slice = priority * 5;
-  new_task->kernel_stack = pstack;
+  new_task->state = NEW;
+  new_task->priority = current->priority;
+  new_task->time_slice =  current->priority * 5;
+  new_task->kernel_stack = kstack;
+  new_task->parent = current;
   new_task->pid = pid_now++;
   new_task->mm = NULL;
-  new_task->tty = tty;
+  new_task->tty = current->tty;
 
-  u32 *stack_top = (u32 *)((u32)pstack + KERNEL_STACK_SIZE);
-
-  *(--stack_top) = (u32)arg;
-  *(--stack_top) = (u32)kthread_exit;
-  /**(--stack_top) = (u32)fn;*/
+  u32 *stack_top = (u32 *)((u32)kstack + KERNEL_STACK_SIZE);
 
   new_task->context->esp = (u32)stack_top;
-  new_task->context->ebp = (u32)pstack;
-  new_task->context->eip = (u32)fn;
+  new_task->context->ebp = (u32)kstack;
   // let task's eflags = 0x2000 (enable interrupt)
   new_task->context->eflags = 0x200;
 
@@ -112,6 +109,28 @@ u32 kthread_start(u32 (*fn)(void *), struct tty *tty, u8 priority, void *arg)
   tail->next->task = new_task;
   tail->next->next = running_task_head;
 
+  return new_task;
+}
+
+// Create kernel taskess
+u32 kthread_start(u32 (*fn)(void *), struct tty *tty, u8 priority, void *arg)
+{
+  struct task_struct *new_task = alloc_task();
+
+  new_task->priority = priority;
+  new_task->time_slice = priority * 5;
+  new_task->mm = NULL;
+  new_task->tty = tty;
+
+  u32 *stack_top = (u32 *)((u32)(new_task->kernel_stack) + KERNEL_STACK_SIZE);
+  *(--stack_top) = (u32)arg;
+  *(--stack_top) = (u32)kthread_exit;
+  /**(--stack_top) = (u32)fn;*/
+
+  new_task->context->esp = (u32)stack_top;
+  new_task->context->eip = (u32)fn;
+
+  new_task->state = RUNNABLE;
   return new_task->pid;
 }
 
