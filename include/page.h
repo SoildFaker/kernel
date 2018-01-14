@@ -45,6 +45,6 @@ void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags);
 void unmap(page_entry_t *pdt_now, u32 va);
 u32 get_mapping(page_entry_t *pdt_now, u32 va, u32 *pa);
 void init_page();
-void page_fault(pt_regs *regs);
+void page_fault(struct trap_frame *frame);
 
 #endif

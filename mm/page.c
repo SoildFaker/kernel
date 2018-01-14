@@ -115,41 +115,41 @@ u32 get_mapping(page_entry_t *pdt_now, u32 va, u32 *pa)
 }
 
 // Page Fault handler
-void page_fault(pt_regs *regs)
+void page_fault(struct trap_frame *frame)
 {
   // The faulting address is stored in the CR2 register.
   u32 cr2;
   asm volatile ("mov %%cr2, %0" : "=r" (cr2));
 
-  printk("Page fault at 0x%x, virtual faulting address 0x%x\n", regs->eip, cr2);
-  printk("Error code: %x\n", regs->err_code);
+  printk("Page fault at 0x%x, virtual faulting address 0x%x\n", frame->eip, cr2);
+  printk("Error code: %x\n", frame->err_code);
 
   // bit0=0: Protection fault
-  if (!(regs->err_code & (1 << 0))) {
+  if (!(frame->err_code & (1 << 0))) {
     ERROR("Page not present.");
   }
   // bit1=0: read fault | bit1=1: write fault
-  if (regs->err_code & (1 << 2)) {
+  if (frame->err_code & (1 << 2)) {
     ERROR("Write error.");
   } else {
     ERROR("Read error.");
   }
   // bit2=1: interrupted in user mode | bit2=0 interrupted in kernel mode
-  if (regs->err_code & (1 << 2)) {
+  if (frame->err_code & (1 << 2)) {
     ERROR("In user mode.");
   } else {
     ERROR("In kernel mode.");
   }
   // bit3=1: protected bit overwritten
-  if (regs->err_code & (1 << 3)) {
+  if (frame->err_code & (1 << 3)) {
     ERROR("Use of reserved bit detected.");
   }
   // bit4=1: occured at instruction fetching
-  if (regs->err_code & (1 << 4)) {
+  if (frame->err_code & (1 << 4)) {
     ERROR("Fault was an instruction fetch.");
   }
   // bit5=1: Protection keys block access
-  if (regs->err_code & (1 << 5)) {
+  if (frame->err_code & (1 << 5)) {
     ERROR("Protection keys block access");
   }
   hlt();
