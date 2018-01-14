@@ -8,7 +8,7 @@
 
 void init_syscall();
 
-int sys_print(const char *str);
-int sys_print_color(u8 color, const char *str);
+int printf(const char *str, ...);
+int fork();
 
 #endif
