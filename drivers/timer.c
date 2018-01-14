@@ -4,11 +4,10 @@
 #include "task.h"
 #include "init.h"
 
-u32 tick = 0;
+volatile u32 tick = 0;
 void timer_callback()
 {
-  /*tick++;*/
-  /*kprint_color(COLOR_BLUE, COLOR_BLACK, "Tick: %u\n", tick);*/
+  tick++;
   schedule();
 }
 
