@@ -42,6 +42,7 @@
 #define IRQ14 46 // IDE0 传输控制使用
 #define IRQ15 47 // IDE1 传输控制使用
 
+#define FRAME_SIZE sizeof(struct trap_frame)
 // A struct describing a Task State Segment.
 struct tss_entry_struct
 {
@@ -63,13 +64,12 @@ struct tss_entry_struct
   u16 iomap_base;
 } __PACKED;
 
-struct pt_regs_t {
+struct trap_frame {
   u32 gs, fs, es, ds;
   u32 edi, esi, ebp, esp, ebx, edx, ecx, eax; // Pushed by pusha.
   u32 int_no, err_code;             // Interrupt number and error code (if applicable)
   u32 eip, cs, eflags, useresp, ss; // Pushed by the processor automatically.
 };
-typedef struct pt_regs_t pt_regs;
 
 enum {
 	GATE_INTERRUPT = 0xE,
@@ -108,7 +108,7 @@ struct cpu_struct {
   struct desc_ptr_struct  idt_ptr;
 };
 
-typedef void (*interrupt_handler_t)(pt_regs *);
+typedef void (*interrupt_handler_t)(struct trap_frame *frame);
 
 extern struct cpu_struct this_cpu;
 // These extern directives let us access the addresses of our ASM ISR handlers.
@@ -119,7 +119,7 @@ extern void tss_flush();
 void irq_enable(u8 irq);
 void init_desc(void);
 void register_interrupt_handler(u8 n, interrupt_handler_t h);
-void int_handler(pt_regs *regs);
+void int_handler(struct trap_frame *frame);
 void register_interrupt_handler(u8 n, interrupt_handler_t h);
 void set_kernel_stack(u32 esp);
 

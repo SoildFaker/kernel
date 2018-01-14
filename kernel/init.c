@@ -189,16 +189,16 @@ void irq_enable(u8 irq)
   outb(0xA1, irq_mask >> 8);
 }
 
-void int_handler(pt_regs *regs)
+void int_handler(struct trap_frame *frame)
 {
-  interrupt_handler_t handler = interrupt_handlers[regs->int_no];
-  if (regs->int_no >= 32) {
-    irq_eoi(regs->int_no);
+  interrupt_handler_t handler = interrupt_handlers[frame->int_no];
+  if (frame->int_no >= 32) {
+    irq_eoi(frame->int_no);
   }
   if(handler){
-    handler(regs);
+    handler(frame);
   }else{
-    printk_color(COLOR_BLUE, COLOR_BLACK, "INT: %d NO HANDLER\n", regs->int_no);
+    printk_color(COLOR_BLUE, COLOR_BLACK, "INT: %d NO HANDLER\n", frame->int_no);
   }
 }
 
