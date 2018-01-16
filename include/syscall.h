@@ -8,7 +8,8 @@
 
 void init_syscall();
 
-int printf(const char *str, ...);
+int print_str(const char *str);
+int print_hex(u32 hex);
 int fork();
 
 #endif
