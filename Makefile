@@ -21,6 +21,7 @@ BTL_LD = tools/loader_link.ld
 GCFLAGS = -c -g -Os -m32 -ffreestanding -Wall -Werror -fno-pie
 GCFLAGS += $(INCLUDE) -fno-stack-protector
 ASFLAGS = --32
+MAPFLAGS = -Map kernel.map
 KNL_LDFLAGS = -static -nostdlib --nmagic -melf_i386 
 BTL_LDFLAGS = -static -nostdlib --nmagic --oformat=binary -melf_i386 
 
@@ -35,7 +36,7 @@ clean:
 	rm -rf kernel.img
 
 $(OUTDIR)/kernel.elf: $(KNL_COBJ) $(KNL_SOBJ)
-	$(LD) -T$(KNL_LD) $(KNL_LDFLAGS) $(KNL_COBJ) $(KNL_SOBJ) -o $(OUTDIR)/kernel.elf
+	$(LD) -T$(KNL_LD) $(KNL_LDFLAGS) $(KNL_COBJ) $(KNL_SOBJ) -o $(OUTDIR)/kernel.elf $(MAPFLAGS)
 
 $(OUTDIR)/loader.bin: $(BTL_OBJ)
 	$(LD) -T$(BTL_LD) $(BTL_LDFLAGS) $(BTL_OBJ) -o $(OUTDIR)/loader.bin
