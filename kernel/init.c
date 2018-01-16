@@ -113,7 +113,7 @@ static inline void write_tss(struct gdt_desc_struct *tss_entry, u32 ss0, u32 esp
   tss_entry->base2	= ((base) >> 24) & 0xFF;
   tss_entry->type		= 0x09;
   tss_entry->s  		= 0x0;
-  tss_entry->dpl		= DPL3;
+  tss_entry->dpl		= DPL0;
   tss_entry->p	  	= 0x1;
   tss_entry->avl		= 0x0;
   tss_entry->zero		= 0x0;

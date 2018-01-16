@@ -57,8 +57,9 @@ void kernel_start(void)
   // enable interrupt
   sti();
 
-  printf("running ...\n");
+  printk("running ...\n");
   while(1) {
+    printk("%d\r", tick);
   }
  
   hlt();
@@ -69,8 +70,7 @@ static inline void init_stack()
   // use new stack space
   asm volatile ("movw $0x10, %ax");
   asm volatile ("movw %ax, %ss");
-  /*asm volatile ("movl %0, %%ebp"::"r"((u32)kernel_stack));*/
-  asm volatile ("xorl %ebp, %ebp");
+  asm volatile ("movl %0, %%ebp"::"r"((u32)kernel_stack));
   asm volatile ("movl %0, %%esp"::"r"((u32)kernel_stack + sizeof(kernel_stack)));
 }
 
