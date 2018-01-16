@@ -36,7 +36,6 @@ start_32:
   movw %ax, %ds
   movw %ax, %es
   movw %ax, %ss
-  movw $0x0, %ax    # for now don't use fs,gs
   movw %ax, %fs
   movw %ax, %gs
 
