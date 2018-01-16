@@ -61,7 +61,7 @@ void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
   if (!pet_now) {
     pet_now = (page_entry_t *)page_alloc();
     pdt_now[pdt_index].base = (u32)(pet_now) >> 12;
-    pdt_now[pdt_index].flags = PG_WRITE | PG_PRESENT;
+    pdt_now[pdt_index].flags = PG_WRITE | PG_PRESENT | PG_USER;
     // Switch to kernel space
     pet_now = (page_entry_t *)((u32)pet_now + PAGE_OFFSET);
     bzero((u8 *)pet_now, PAGE_SIZE);
@@ -70,7 +70,7 @@ void map(page_entry_t *pdt_now, u32 va, u32 pa, u32 flags)
     pet_now = (page_entry_t *)((u32)pet_now + PAGE_OFFSET);
   }
   pet_now[pet_index].base = (pa >> 12);
-  pet_now[pet_index].flags = flags;
+  pet_now[pet_index].flags = flags | PG_USER;
   // flush CPU page cache
   asm volatile ("invlpg (%0)" : : "a" (va));
 }
