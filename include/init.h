@@ -14,8 +14,8 @@
 #define GDT_ENTRY_USER_DS   4
 #define GDT_TSS_ENTRY       5
 
-#define __KERNEL_CS		(GDT_ENTRY_KERNEL_CS*8)
-#define __KERNEL_DS		(GDT_ENTRY_KERNEL_DS*8)
+#define __KERNEL_CS   (GDT_ENTRY_KERNEL_CS*8)
+#define __KERNEL_DS   (GDT_ENTRY_KERNEL_DS*8)
 #define __USER_DS			(GDT_ENTRY_USER_DS*8 + 3)
 #define __USER_CS			(GDT_ENTRY_USER_CS*8 + 3)
 
@@ -115,6 +115,7 @@ extern struct cpu_struct this_cpu;
 extern void gdt_flush(u32);
 extern void idt_flush(u32);
 extern void tss_flush();
+extern void int_ret_stub(void);
 
 void irq_enable(u8 irq);
 void init_desc(void);
