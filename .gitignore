@@ -4,6 +4,7 @@
 *.img
 *.out
 *.com
+*.map
 .vscode
 log_*
 freedos*
