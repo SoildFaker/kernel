@@ -32,9 +32,9 @@ void init_tty()
     tty[i].cursor_y = 1;
     set_title_bar(&tty[i], i);
   }
-  tty_cur = &tty[0];
-  tty_print = tty_cur;
-  switch_tty(tty_cur);
+  tty_print = &tty[0];
+  switch_tty(tty_print);
+  tty_cur = tty_print;
 }
 
 // Switch video buffer start address
