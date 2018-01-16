@@ -67,7 +67,7 @@ void switch_to(struct task_struct *next)
     next->state = RUNNING;
     tty_print = next->tty;
     // Change our kernel stack over.
-    set_kernel_stack((u32)current->kernel_stack+KERNEL_STACK_SIZE);
+    set_kernel_stack((u32)next->kernel_stack+KERNEL_STACK_SIZE);
     switch_task(prev->context, current->context);
   }
 }
@@ -79,21 +79,21 @@ struct task_struct *alloc_task()
     (struct task_struct *)kmalloc(sizeof(struct task_struct));
   new_task->context = 
     (struct task_context *)kmalloc(sizeof(struct task_context));
-  u32 *kstack = (u32 *)kmalloc(KERNEL_STACK_SIZE);
-  assert(kstack != NULL, "kern_thread: kmalloc error");
+  u8 *kstack = (u8 *)kmalloc(KERNEL_STACK_SIZE);
+  u8 *pstack = (u8 *)kmalloc(USER_STACK_SIZE);
+  assert(kstack != NULL && pstack != NULL, "kern_thread: kmalloc error");
 
   new_task->state = NEW;
   new_task->priority = current->priority;
   new_task->time_slice =  current->priority * 5;
   new_task->kernel_stack = kstack;
+  new_task->user_stack = pstack;
   new_task->parent = current;
   new_task->pid = pid_now++;
   new_task->mm = NULL;
   new_task->tty = current->tty;
 
-  u32 *stack_top = (u32 *)((u32)kstack + KERNEL_STACK_SIZE);
-
-  new_task->context->esp = (u32)stack_top;
+  new_task->context->esp = (u32)((u32)kstack + KERNEL_STACK_SIZE);
   new_task->context->ebp = (u32)kstack;
   // let task's eflags = 0x2000 (enable interrupt)
   new_task->context->eflags = 0x200;
@@ -122,7 +122,7 @@ u32 kthread_start(u32 (*fn)(void *), struct tty *tty, u8 priority, void *arg)
   new_task->mm = NULL;
   new_task->tty = tty;
 
-  u32 *stack_top = (u32 *)((u32)(new_task->kernel_stack) + KERNEL_STACK_SIZE);
+  u32 *stack_top = (u32 *)((u32)new_task->kernel_stack + KERNEL_STACK_SIZE);
   *(--stack_top) = (u32)arg;
   *(--stack_top) = (u32)kthread_exit;
   /**(--stack_top) = (u32)fn;*/
