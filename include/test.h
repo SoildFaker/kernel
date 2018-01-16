@@ -1,6 +1,7 @@
 #include "common.h"
 #include "tools.h"
 #include "task.h"
+#include "mm.h"
 #include "fs.h"
 #include "vfs.h"
 #include "syscall.h"
@@ -34,13 +35,19 @@ u32 test_a(__UNUSED__ void *arg)
 
 u32 test_d(__UNUSED__ void *args)
 {
+  // Switch kernel stack to user stack
+  // this is only for test
+  asm volatile ("movl %0, %%ebp"::"r"((u32)current->user_stack));
+  asm volatile ("movl %0, %%esp"::"r"((u32)current->user_stack + USER_STACK_SIZE));
+
   int a = 0;
-  //switch_to_user_mode();
+  switch_to_user_mode();
   a = fork();
   if (a == 0){
-    printf("child running ...\n");
+    print_str("child running ...\n");
   } else {
-    printf("parent running ...\nchild id:%d\n", a);
+    print_hex(a);
+    print_str("\nparent running ...\n");
   }
   while(1);
 
