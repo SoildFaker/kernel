@@ -9,7 +9,7 @@ enter_user_mode:
   mov %ax, %fs 
   mov %ax, %gs 
 
-  mov %esp, %eax
+  movl  %esp, %eax
   pushl $0x23
   pushl %eax 
   pushf 
@@ -113,7 +113,7 @@ idt_flush:
 # up for kernel mode segments, calls the C-level fault handler,
 # and finally restores the stack frame.
 int_common_stub:
-  pusha                    # Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
+  pusha            # Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
 
   push %ds
   push %es
@@ -126,7 +126,7 @@ int_common_stub:
   movw %ax, %gs
   movw %ax, %fs
 
-  pushl %esp
+  pushl %esp       # struct trap_frame pointer
   call int_handler
   addl $4, %esp
 
