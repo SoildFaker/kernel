@@ -6,8 +6,9 @@
 #include "drivers/tty.h"
 
 #define PROC_SIZE 4096
+#define TASK_BLOCKED 0x1
 
-enum task_state { UNUSED, NEW, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+enum task_state { UNUSED, NEW, EMBRYO, SLEEPING, RUNNABLE, ZOMBIE };
 
 struct task_context {
  	u32 eip;
@@ -27,7 +28,8 @@ struct mm_struct {
 
 struct task_struct {
   u32 pid;
-  volatile u32 time_slice;
+  u32 time_slice;
+  u32 flags;
   u8 priority;
   void *kernel_stack;
   void *user_stack;
