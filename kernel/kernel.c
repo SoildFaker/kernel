@@ -46,7 +46,7 @@ void kernel_start(void)
 
   // interrupt handler registed
   init_keyboard();
-  init_timer(200);     // schedule() here
+  init_timer(2000);     // schedule() here
 
   kthread_start(task_idle, &tty[0], 1, NULL);
   kthread_start(test_a, &tty[1], 2, NULL);
