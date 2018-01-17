@@ -2,6 +2,8 @@
 #include "debug.h"
 #include "drivers/display.h"
 #include "mm.h"
+#include "fs.h"
+#include "vfs.h"
 #include "page.h"
 #include "tools.h"
 #include "task.h"
@@ -32,6 +34,23 @@ int print_str(const char *str)
   int a;
   asm volatile("int $0x80" : "=a" (a) : "0" (0), "b"(str));
   return a;
+}
+
+static int sys_exec(struct trap_frame *frame)
+{
+  int i = 0;
+  struct fs_node *fs_root = (struct fs_node *)(frame->ecx);
+  struct dirent *node = 0;
+  while ( (node = readdir_fs(fs_root, i)) != 0)
+  {
+    struct fs_node *fsnode = finddir_fs(fs_root, node->name);
+    if ((fsnode->flags & 0x7) == FS_FILE){
+      char buf[256];
+      read_fs(fsnode, 0, 256, (u8 *)buf);
+    }
+    i++;
+  }
+  return 0;
 }
 
 static int sys_fork(struct trap_frame *frame)
@@ -73,6 +92,7 @@ void init_syscall()
   syscalls[0] = &sys_print;
   syscalls[1] = &sys_fork;
   syscalls[2] = &sys_print_hex;
+  syscalls[3] = &sys_exec;
 }
 
 void syscall_handler(struct trap_frame *frame)
