@@ -43,18 +43,26 @@ void init_task()
 
 // Time slice for each process would be decrease everytime schedule() called
 // 
-static volatile u32 count_slice = 0;
 void schedule()
 {
-  count_slice++;
-  // Next task is runnable
-  if (running_task_head->next->task->state == RUNNABLE){
-     /*Next task's time slice bigger than current*/
-    if (count_slice >= current->time_slice) {
-      count_slice = 0;
+  // Current task run out time slice
+  if (current->time_slice == 0) {
+    current->time_slice = current->priority * 50;
+    // Find next RUNNABLE
+    for (;;) {
       running_task_head = running_task_head->next;
-      switch_to(running_task_head->task);
+      // Next task is RUNNABLE
+      if (running_task_head->task->state == RUNNABLE) {
+        // Switch to next
+        switch_to(running_task_head->task);
+      } 
+      // Return if no more task
+      if (running_task_head->task == current) {
+        return;
+      }
     }
+  } else {
+    current->time_slice--;
   }
 }
 
@@ -63,8 +71,6 @@ void switch_to(struct task_struct *next)
   if (current != next) {
     struct task_struct *prev = current;
     current = next;
-    prev->state = RUNNABLE;
-    next->state = RUNNING;
     tty_print = next->tty;
     // Change our kernel stack over.
     set_kernel_stack((u32)next->kernel_stack+KERNEL_STACK_SIZE);
@@ -85,7 +91,7 @@ struct task_struct *alloc_task()
 
   new_task->state = NEW;
   new_task->priority = current->priority;
-  new_task->time_slice =  current->priority * 5;
+  new_task->time_slice = current->priority * 50;
   new_task->kernel_stack = kstack;
   new_task->user_stack = pstack;
   new_task->parent = current;
@@ -118,7 +124,7 @@ u32 kthread_start(u32 (*fn)(void *), struct tty *tty, u8 priority, void *arg)
   struct task_struct *new_task = alloc_task();
 
   new_task->priority = priority;
-  new_task->time_slice = priority * 5;
+  new_task->time_slice = priority * 50;
   new_task->mm = NULL;
   new_task->tty = tty;
 
