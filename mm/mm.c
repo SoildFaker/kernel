@@ -1,8 +1,8 @@
-#include "mm.h"
 #include "debug.h"
-#include "tools.h"
+#include "mm.h"
 #include "page.h"
 #include "init.h"
+#include "tools.h"
 
 u8 kernel_stack[KERNEL_STACK_SIZE];
 mmap_entry_t *mmap = (mmap_entry_t *)(0x1000 + PAGE_OFFSET);
@@ -17,6 +17,8 @@ static void glue_chunk(memory_header_t *chunk);
 static u32 heap_max = HEAP_START;
 static u32 page_stack[PAGE_STACK_SIZE];
 static u32 page_stack_top = 0;
+
+u32 memory_map_page[MEMORY_SIZE/(32*PAGE_SIZE)];
 
 void init_page_stack()
 {

@@ -1,5 +1,5 @@
-#ifndef __COMMON__
-#define __COMMON__
+#ifndef COMMON_H
+#define COMMON_H
 
 #define NULL 0
 #define __UNUSED__    __attribute__((unused))
@@ -82,4 +82,4 @@ static inline u32 inl(u16 port)
 	return v;
 }
 
-#endif // __COMMON__
+#endif

@@ -1,5 +1,5 @@
-#ifndef __TTY__
-#define __TTY__
+#ifndef TTY_H
+#define TTY_H
 
 #include "common.h"
 

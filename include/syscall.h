@@ -1,5 +1,5 @@
-#ifndef __SYSCALL__
-#define __SYSCALL__
+#ifndef SYSCALL_H
+#define SYSCALL_H
 
 #include "common.h"
 #include "init.h"
