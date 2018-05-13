@@ -126,56 +126,100 @@ static struct keymap us_keymap = {
   0
 };
 
+u8 scancode; // keyboard buffer
+u8 pressed = 0;
+struct keymap *default_layout = &us_keymap;
+u8 *scancodes;
+
+static inline void task_keyboard(){
+  display_putc(COLOR_BLACK, COLOR_GREEN, tty_cur, pressed_key());
+}
+
+static inline void switch_scancodes(){
+  // If shift pressed, switch to shift code layout
+  if ((default_layout->controls & (LSHIFT | RSHIFT))
+      && !(default_layout->controls & CONTROL)) 
+  {
+    scancodes = default_layout->shift_scancodes;
+  }
+  // If Caps Lock on , switch layout to upper case
+  if ((default_layout->controls & (CAPSLOCK)) 
+      && !(default_layout->controls & CONTROL)) 
+  {
+    scancodes = default_layout->capslock_scancodes;
+  }
+}
+
+static inline void set_control_code(){
+  u32 i;
+  // Check control set
+  for (i = 0; i < 8; i++) {
+    // If pressed is control key set control bit to 1
+    // otherwise set to 0
+    if (default_layout->control_map[i] == scancode) {
+      if (default_layout->controls & 1 << i) {
+        default_layout->controls &= ~(1 << i);
+      } else {
+        default_layout->controls |= (1 << i);
+      }
+      return;
+    }
+  }
+}
+
+static inline void reset_control_code(){
+  u32 i;
+  // Clean control state
+  for (i = 0; i < 5; i++) {
+    if(default_layout->control_map[i] == (scancode & ~RELEASED_MASK)) {
+      default_layout->controls &= ~(1 << i);
+      return;
+    }
+  }
+}
+
 void keyboard_callback()
 {
-  u8 scancode = inb(0x60);
+  scancode = inb(0x60);
 
-  struct keymap *layout = &us_keymap;
-
+  scancodes = default_layout->scancodes;
   // keyboard handler 
   // scancode & RELEASED_MASK means the key has been break
   if (scancode & RELEASED_MASK) {
-    u32 i;
-    // Clean control state
-    for (i = 0; i < 5; i++) {
-      if(layout->control_map[i] == (scancode & ~RELEASED_MASK)) {
-        layout->controls &= ~(1 << i);
-        return;
-      }
-    }
     // key pressed
+    pressed = 0;
+    reset_control_code();
   } else {
-    u32 i;
-    // Check control set
-    for (i = 0; i < 8; i++) {
-      // If pressed is control key set control bit to 1
-      // otherwise set to 0
-      if (layout->control_map[i] == scancode) {
-        if (layout->controls & 1 << i) {
-          layout->controls &= ~(1 << i);
-        } else {
-          layout->controls |= (1 << i);
-        }
-        return;
-      }
-    }
-    u8 *scancodes = layout->scancodes;
-
-    // If shift pressed, switch to shift code layout
-    if ((layout->controls & (LSHIFT | RSHIFT)) && !(layout->controls & CONTROL)) {
-      scancodes = layout->shift_scancodes;
-    }
-    // If Caps Lock on , switch layout to upper case
-    if ((layout->controls & (CAPSLOCK)) && !(layout->controls & CONTROL)) {
-      scancodes = layout->capslock_scancodes;
-    }
-    // Switch tty
-    if ((layout->controls & (ALT)) && !(layout->controls & CONTROL)){
-      if (scancode < TTY_NUMBER+2) switch_tty(&tty[scancode-2]);
-      return;
-    }
-    display_putc(COLOR_BLACK, COLOR_GREEN, tty_cur, scancodes[scancode]);
+    pressed = 1;
+    set_control_code();
+    // capslock & shift mode
+    switch_scancodes();
+    // print task
+    task_keyboard();
   }
+}
+
+// return 1 if key is pressed, 0 if not
+u8 is_controls_pressed(u8 controls_key)
+{
+  if(default_layout->controls & (controls_key)){
+    return 1;
+  }
+  return 0;
+}
+
+u8 pressed_key()
+{
+  return scancodes[scancode];
+}
+
+// return 1 if key is pressed, 0 if not
+u8 is_pressed(u8 keycode)
+{
+  if (pressed && keycode == scancodes[scancode]){
+    return 1;
+  }
+  return 0;
 }
 
 void init_keyboard()
@@ -184,4 +228,5 @@ void init_keyboard()
   register_interrupt_handler(IRQ1, (interrupt_handler_t)&keyboard_callback);
   // enable keyboard interrupt
   irq_enable(1);
+  scancodes = default_layout->scancodes;
 }

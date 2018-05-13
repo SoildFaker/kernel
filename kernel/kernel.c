@@ -26,14 +26,10 @@ void kernel_start(void)
 
   // print function initialized
   init_tty();
-  flush_screen();
 
   // memory management initialized
   init_page();
   init_page_stack();
-
-  // print system info
-  print_info();
 
   // multi task init
   init_task();
@@ -48,7 +44,13 @@ void kernel_start(void)
   init_keyboard();
   init_timer(2000);     // schedule() here
 
+  flush_screen(tty_cur);
+
+  // print system info
+  print_info();
+
   kthread_start(task_idle, &tty[0], 1, NULL);
+  kthread_start(task_tty, &tty[0], 1, NULL);
   kthread_start(test_a, &tty[1], 2, NULL);
   kthread_start(test_b, &tty[2], 1, NULL);
   kthread_start(test_c, &tty[2], 3, NULL);

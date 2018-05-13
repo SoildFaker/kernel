@@ -1,4 +1,5 @@
 #include "drivers/tty.h"
+#include "drivers/keyboard.h"
 #include "drivers/display.h"
 
 struct tty *tty_cur;
@@ -37,13 +38,36 @@ void init_tty()
   tty_cur = tty_print;
 }
 
+u32 task_tty(__UNUSED__ void *arg)
+{
+  while(1){
+    // Switch tty
+    if (is_controls_pressed(ALT) && !is_controls_pressed(CONTROL)){
+      switch(pressed_key()){
+        case '1':
+          switch_tty(&tty[0]);
+          break;
+        case '2':
+          switch_tty(&tty[1]);
+          break;
+        case '3':
+          switch_tty(&tty[2]);
+          break;
+        case '4':
+          switch_tty(&tty[3]);
+          break;
+      }
+    }
+  }
+  return 0;
+}
 // Switch video buffer start address
 // using io function write registers to set VGA memory start address
-// There is a confused thing, the start address must be half of video memory size
-// Didn't know the reason
+// Because of every char on the screen takes 2 bytes 
+// So the start address must be half of offset addr
 void switch_tty(struct tty *tty)
 {
-  if (tty_cur == tty) return;
+  if (tty_cur == tty){ return; }
   tty_cur = tty;
   set_video_start_addr(tty->offset >> 1);
 }
