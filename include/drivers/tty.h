@@ -3,8 +3,10 @@
 
 #include "common.h"
 
-#define TTY_BUFFER_SIZE 0x1200
+// 4 tty
 #define TTY_NUMBER      4
+// Every tty has 50 lines to buffer
+#define TTY_BUFFER_SIZE (80 * 50 * 2)
 
 struct tty {
   u32 offset;
@@ -18,5 +20,6 @@ extern struct tty tty[TTY_NUMBER];
 
 void switch_tty(struct tty *tty);
 void init_tty();
+u32 task_tty(__UNUSED__ void *arg);
 
 #endif

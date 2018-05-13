@@ -1,5 +1,5 @@
-#ifndef __DISPLAY__
-#define __DISPLAY__
+#ifndef DISPLAY_H
+#define DISPLAY_H
 
 #include "common.h"
 
@@ -33,8 +33,8 @@
 
 extern struct tty *tty_print;
 
-void flush_screen();
-void flush_line(u8);
+void flush_screen(struct tty *tty);
+void flush_line(struct tty *tty, u8);
 void display_print_color(u8 bg, u8 fg, const char *string);
 void display_print(const char *string);
 void display_putc(u8 bg, u8 fg, struct tty *tty, char c);
