@@ -1,5 +1,5 @@
-#ifndef __HARDDISK__
-#define __HARDDISK__
+#ifndef HARDDISK_H
+#define HARDDISK_H
 
 #include "common.h"
 
