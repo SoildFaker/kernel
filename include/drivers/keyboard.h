@@ -1,5 +1,5 @@
-#ifndef __KEYBOARD__
-#define __KEYBOARD__
+#ifndef DRIVERS_KEYBOARD_H
+#define DRIVERS_KEYBOARD_H
 
 #include "common.h"
 
@@ -20,11 +20,11 @@
 extern u8 pressed;
 
 struct keymap {
-  u8 scancodes[128];
-  u8 capslock_scancodes[128];
-  u8 shift_scancodes[128];
-  u8 control_map[8];
-  u8 controls;
+    u8 scancodes[128];
+    u8 capslock_scancodes[128];
+    u8 shift_scancodes[128];
+    u8 control_map[8];
+    u8 controls;
 };
 
 void init_keyboard();

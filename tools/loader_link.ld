@@ -1,16 +1,16 @@
 ENTRY(start)
 SECTIONS
 {
-  . = 0x8000;
-  .text :
-  {
-    *(.text);
-  }
+    . = 0x8000;
+    .text :
+    {
+        *(.text);
+    }
 
-  .data :
-  {
-    *(.data)
-    *(.rodata*)
-  }
+    .data :
+    {
+        *(.data)
+        *(.rodata*)
+    }
 
 } 

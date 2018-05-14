@@ -1,5 +1,5 @@
-#ifndef TTY_H
-#define TTY_H
+#ifndef DRIVERS_TTY_H
+#define DRIVERS_TTY_H
 
 #include "common.h"
 
@@ -9,10 +9,10 @@
 #define TTY_BUFFER_SIZE (80 * 50 * 2)
 
 struct tty {
-  u32 offset;
-  u8 cursor_x;
-  u8 cursor_y;
-  volatile u16 *buffer;
+    u32 offset;
+    u8 cursor_x;
+    u8 cursor_y;
+    volatile u16 *buffer;
 };
 
 extern struct tty *tty_cur;

@@ -1,5 +1,5 @@
-#ifndef __STRING__
-#define __STRING__
+#ifndef STRING_H
+#define STRING_H
 
 #include "common.h"
 

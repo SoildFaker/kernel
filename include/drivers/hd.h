@@ -1,5 +1,5 @@
-#ifndef HARDDISK_H
-#define HARDDISK_H
+#ifndef DRIVERS_HD_H
+#define DRIVERS_HD_H
 
 #include "common.h"
 

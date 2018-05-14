@@ -1,5 +1,5 @@
-#ifndef __INIT__
-#define __INIT__
+#ifndef INIT_H
+#define INIT_H
 
 #include "common.h"
 
@@ -46,66 +46,66 @@
 // A struct describing a Task State Segment.
 struct tss_entry_struct
 {
-  u32 prev_tss;   // The previous TSS - if we used hardware task switching this would form a linked list.
-  u32 esp0;       // The stack pointer to load when we change to kernel mode.
-  u32 ss0;        // The stack segment to load when we change to kernel mode.
-  u32 esp1;       // Unused...
-  u32 ss1;
-  u32 esp2;
-  u32 ss2;
-  u32 cr3;
-  u32 eip;
-  u32 eflags;
-  u32 eax, ecx, edx, ebx; 
-  u32 esp, ebp, esi, edi;
-  u32 es, cs, ss, ds, fs, gs;
-  u32 ldt;        // Unused...
-  u16 trap;
-  u16 iomap_base;
+    u32 prev_tss;   // The previous TSS - if we used hardware task switching this would form a linked list.
+    u32 esp0;       // The stack pointer to load when we change to kernel mode.
+    u32 ss0;        // The stack segment to load when we change to kernel mode.
+    u32 esp1;       // Unused...
+    u32 ss1;
+    u32 esp2;
+    u32 ss2;
+    u32 cr3;
+    u32 eip;
+    u32 eflags;
+    u32 eax, ecx, edx, ebx; 
+    u32 esp, ebp, esi, edi;
+    u32 es, cs, ss, ds, fs, gs;
+    u32 ldt;        // Unused...
+    u16 trap;
+    u16 iomap_base;
 } __PACKED;
 
 struct trap_frame {
-  u32 gs, fs, es, ds;
-  u32 edi, esi, ebp, esp, ebx, edx, ecx, eax; // Pushed by pusha.
-  u32 int_no, err_code;             // Interrupt number and error code (if applicable)
-  u32 eip, cs, eflags, useresp, ss; // Pushed by the processor automatically.
+    u32 gs, fs, es, ds;
+    u32 edi, esi, ebp, esp, ebx, edx, ecx, eax; // Pushed by pusha.
+    u32 int_no, err_code;             // Interrupt number and error code (if applicable)
+    u32 eip, cs, eflags, useresp, ss; // Pushed by the processor automatically.
 };
 
 enum {
-	GATE_INTERRUPT = 0xE,
-	GATE_TRAP = 0xF,
-	GATE_CALL = 0xC,
-	GATE_TASK = 0x5,
+    GATE_INTERRUPT = 0xE,
+    GATE_TRAP = 0xF,
+    GATE_CALL = 0xC,
+    GATE_TASK = 0x5,
 };
 
 struct gdt_desc_struct {
-  u16 limit0; 
-  u16 base0;
-  u16 base1 : 8, type : 4, s : 1, dpl : 2, p : 1;
-  u16 limit1 : 4, avl : 1, zero : 1, db : 1, g : 1, base2 : 8;
+    u16 limit0; 
+    u16 base0;
+    u16 base1 : 8, type : 4, s : 1, dpl : 2, p : 1;
+    u16 limit1 : 4, avl : 1, zero : 1, db : 1, g : 1, base2 : 8;
 } __PACKED;
 
 struct idt_desc_struct {
-  u16 addr0;
-  u16 segment;
-  u16 reserved : 5, zero0 : 3, type : 4, zero1 : 1, dpl : 2, p : 1;
-  u16 addr1;
+    u16 addr0;
+    u16 segment;
+    u16 reserved : 5, zero0 : 3, type : 4, zero1 : 1, dpl : 2, p : 1;
+    u16 addr1;
 } __PACKED;
 
 // A struct describing a pointer to an array of interrupt handlers.
 // This is in a format suitable for giving to 'lidt'.
 struct desc_ptr_struct
 {
-  u16 limit;
-  u32 base;                // The address of the first element in our idt_entry_t array.
+    u16 limit;
+    u32 base;                // The address of the first element in our idt_entry_t array.
 } __PACKED;
 
 struct cpu_struct {
-  struct gdt_desc_struct gdt[GDT_ENTRY_NUM];
-  struct desc_ptr_struct  gdt_ptr;
-  struct tss_entry_struct tss;
-  struct idt_desc_struct idt[IDT_ENTRY_NUM];
-  struct desc_ptr_struct  idt_ptr;
+    struct gdt_desc_struct gdt[GDT_ENTRY_NUM];
+    struct desc_ptr_struct  gdt_ptr;
+    struct tss_entry_struct tss;
+    struct idt_desc_struct idt[IDT_ENTRY_NUM];
+    struct desc_ptr_struct  idt_ptr;
 };
 
 typedef void (*interrupt_handler_t)(struct trap_frame *frame);
@@ -121,7 +121,6 @@ void irq_enable(u8 irq);
 void init_desc(void);
 void register_interrupt_handler(u8 n, interrupt_handler_t h);
 void int_handler(struct trap_frame *frame);
-void register_interrupt_handler(u8 n, interrupt_handler_t h);
 void set_kernel_stack(u32 esp);
 
 #endif

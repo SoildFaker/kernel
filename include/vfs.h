@@ -1,5 +1,5 @@
-#ifndef __VFS__
-#define __VFS__
+#ifndef VFS_H
+#define VFS_H
 
 #include "common.h"
 

@@ -1,5 +1,5 @@
-#ifndef __TOOLS__
-#define __TOOLS__ 
+#ifndef TOOLS_H
+#define TOOLS_H 
 
 #include "common.h"
 #include "drivers/display.h"
@@ -21,12 +21,12 @@ typedef __builtin_va_list va_list;
 #define SMALL	  	64  	// use 'abcdef' instead of 'ABCDEF'
 
 #define do_div(n,base) ({ \
-		int __res; \
-		__asm__("divl %4":"=a" (n),"=d" (__res):"0" (n),"1" (0),"r" (base)); \
-		__res; })
+        int __res; \
+        __asm__("divl %4":"=a" (n),"=d" (__res):"0" (n),"1" (0),"r" (base)); \
+        __res; })
 
 
- // 内核的打印函数
+// 内核的打印函数
 void printk(const char *format, ...);
 int vsprintf(char *buff, const char *format, va_list args);
 // 内核的打印函数带颜色

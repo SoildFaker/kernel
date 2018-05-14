@@ -1,5 +1,5 @@
-#ifndef __FS__
-#define __FS__
+#ifndef FS_H
+#define FS_H
 
 #include "common.h"
 
@@ -21,28 +21,28 @@ typedef  struct dirent * (*fn_readdir_fs) (struct fs_node*,u32);
 typedef struct fs_node * (*fn_finddir_fs) (struct fs_node*,char *name);
 
 struct fs_node {
-  char name[128]; // The filename
-  u32 mask;       // The permissions mask
-  u32 uid;        // The owner's id
-  u32 gid;        // The owning group
-  u32 flags;      // Includes the node's type
-  u32 inode;      // This is device-specific - provided a way for a fs to indentify files
-  u32 length;     // Size of the file by byte
-  u32 impl;       // An implementation-defined number
-  fn_read_fs read;
-  fn_write_fs write;
-  fn_open_fs open;
-  fn_close_fs close;
-  fn_readdir_fs readdir;
-  fn_finddir_fs finddir;
-  struct fs_node *ptr; // used by mountpoints and symlinks
+    char name[128]; // The filename
+    u32 mask;       // The permissions mask
+    u32 uid;        // The owner's id
+    u32 gid;        // The owning group
+    u32 flags;      // Includes the node's type
+    u32 inode;      // This is device-specific - provided a way for a fs to indentify files
+    u32 length;     // Size of the file by byte
+    u32 impl;       // An implementation-defined number
+    fn_read_fs read;
+    fn_write_fs write;
+    fn_open_fs open;
+    fn_close_fs close;
+    fn_readdir_fs readdir;
+    fn_finddir_fs finddir;
+    struct fs_node *ptr; // used by mountpoints and symlinks
 };
 
 // One of these is returned by the readdir call, according to POSIX.
 struct dirent
 {
-  char name[128]; // Filename.
-  u32 ino;        // Inode number. Required by POSIX.
+    char name[128]; // Filename.
+    u32 ino;        // Inode number. Required by POSIX.
 };
 
 extern struct fs_node *fs_root; // The root of the filesystem.

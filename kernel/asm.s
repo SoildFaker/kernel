@@ -2,53 +2,53 @@
 
 .global enter_user_mode
 enter_user_mode:
-  popl %ebx
-  mov $0x23, %ax 
-  mov %ax, %ds 
-  mov %ax, %es 
-  mov %ax, %fs 
-  mov %ax, %gs 
+    popl %ebx
+    mov $0x23, %ax 
+    mov %ax, %ds 
+    mov %ax, %es 
+    mov %ax, %fs 
+    mov %ax, %gs 
 
-  movl  %esp, %eax
-  pushl $0x23
-  pushl %eax 
-  pushf 
-  pushl $0x1B 
-  pushl %ebx
-  iret
+    movl  %esp, %eax
+    pushl $0x23
+    pushl %eax 
+    pushf 
+    pushl $0x1B 
+    pushl %ebx
+    iret
 
 .global switch_task
 switch_task:
 # save current content
-  movl 4(%esp), %eax # current env pointer
- 
-  push (%esp)
-  pop  (%eax)
-  movl %esp,  4(%eax) 
-  movl %ebp,  8(%eax) 
-  movl %ebx, 12(%eax) 
-  movl %ecx, 16(%eax) 
-  movl %edx, 20(%eax) 
-  movl %esi, 24(%eax) 
-  movl %edi, 28(%eax) 
-  pushf
-  pop  32(%eax)
-  
-# switch to next
-  movl  8(%esp), %eax # next env pointer
+    movl 4(%esp), %eax # current env pointer
 
-  movl  4(%eax), %esp
-  movl  8(%eax), %ebp
-  movl 12(%eax), %ebx
-  movl 16(%eax), %ecx
-  movl 20(%eax), %edx
-  movl 24(%eax), %esi
-  movl 28(%eax), %edi
-  push 32(%eax)
-  # push %eax
-  popf
-  push (%eax)
-  ret
+    push (%esp)
+    pop  (%eax)
+    movl %esp,  4(%eax) 
+    movl %ebp,  8(%eax) 
+    movl %ebx, 12(%eax) 
+    movl %ecx, 16(%eax) 
+    movl %edx, 20(%eax) 
+    movl %esi, 24(%eax) 
+    movl %edi, 28(%eax) 
+    pushf
+    pop  32(%eax)
+
+# switch to next
+    movl  8(%esp), %eax # next env pointer
+
+    movl  4(%eax), %esp
+    movl  8(%eax), %ebp
+    movl 12(%eax), %ebx
+    movl 16(%eax), %ecx
+    movl 20(%eax), %edx
+    movl 24(%eax), %esi
+    movl 28(%eax), %edi
+    push 32(%eax)
+# push %eax
+    popf
+    push (%eax)
+    ret
 
 .global tss_flush    # Allows our C code to call tss_flush().
 tss_flush:
@@ -56,55 +56,55 @@ tss_flush:
 # 0x28, as it is the 5th selector and each is 8 bytes
 # long, but we set the bottom two bits (making 0x2B)
 # so that it has an RPL of 3, not zero.
-  mov $0x2B, %ax
-  ltr %ax            # Load 0x2B into the task state register.
-  ret
+    mov $0x2B, %ax
+    ltr %ax            # Load 0x2B into the task state register.
+    ret
 
 .global gdt_flush
 gdt_flush:
-  movl 4(%esp), %eax    # give a parameter (gdt_table entry address)
-  lgdt (%eax)           # load the new gdt pointer
-  ret
+    movl 4(%esp), %eax    # give a parameter (gdt_table entry address)
+    lgdt (%eax)           # load the new gdt pointer
+    ret
 
 .global idt_flush
 idt_flush:
-  movl 4(%esp), %eax
-  lidt (%eax)
-  ret
+    movl 4(%esp), %eax
+lidt (%eax)
+    ret
 
 .macro IRQ num code
-  .short \code
-  .short \num
-  .global irq\num
-  irq\num:
-    cli                          # Disable interrupts firstly.
-    pushl  $0                    # Push a dummy error code.
-    pushl  $\code                # Push the interrupt number.
-    jmp int_common_stub          # Go to our common handler code.
+    .short \code
+    .short \num
+    .global irq\num
+    irq\num:
+        cli                          # Disable interrupts firstly.
+        pushl  $0                    # Push a dummy error code.
+        pushl  $\code                # Push the interrupt number.
+        jmp int_common_stub          # Go to our common handler code.
 .endm
 
 
 # This macro creates a stub for an ISR which does NOT pass it's own
 # error code (adds a dummy errcode byte).
 .macro ISR_NOERRCODE code
-  .short \code
-  .global isr\code
-  isr\code:
-    cli                         # Disable interrupts firstly.
-    pushl  $0                    # Push a dummy error code.
-    pushl  $\code                 # Push the interrupt number.
-    jmp int_common_stub         # Go to our common handler code.
+    .short \code
+    .global isr\code
+    isr\code:
+        cli                         # Disable interrupts firstly.
+        pushl  $0                    # Push a dummy error code.
+        pushl  $\code                 # Push the interrupt number.
+        jmp int_common_stub         # Go to our common handler code.
 .endm
 
 # This macro creates a stub for an ISR which passes it's own
 # error code.
 .macro ISR_ERRCODE code
-  .short \code
-  .global isr\code
-  isr\code:
-    cli                         # Disable interrupts.
-    pushl $\code                 # Push the interrupt number
-    jmp int_common_stub
+    .short \code
+    .global isr\code
+    isr\code:
+        cli                         # Disable interrupts.
+        pushl $\code                 # Push the interrupt number
+        jmp int_common_stub
 .endm
 # In init.c
 .extern int_handler
@@ -113,33 +113,33 @@ idt_flush:
 # up for kernel mode segments, calls the C-level fault handler,
 # and finally restores the stack frame.
 int_common_stub:
-  pusha            # Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
+    pusha            # Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
 
-  push %ds
-  push %es
-  push %fs
-  push %gs
+    push %ds
+    push %es
+    push %fs
+    push %gs
 
-  movw $0x10, %ax  # load the kernel data segment descriptor
-  movw %ax, %ds
-  movw %ax, %es
-  movw %ax, %gs
-  movw %ax, %fs
+    movw $0x10, %ax  # load the kernel data segment descriptor
+    movw %ax, %ds
+    movw %ax, %es
+    movw %ax, %gs
+    movw %ax, %fs
 
-  pushl %esp       # struct trap_frame pointer
-  call int_handler
-  addl $4, %esp
+    pushl %esp       # struct trap_frame pointer
+    call int_handler
+    addl $4, %esp
 
 .global int_ret_stub
 int_ret_stub:
-  pop %gs
-  pop %fs
-  pop %es
-  pop %ds
-  popa                     # Pops edi,esi,ebp...
-  addl $8, %esp    # Cleans up the pushed error code and pushed ISR number
-  sti
-  iret           # pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
+    pop %gs
+    pop %fs
+    pop %es
+    pop %ds
+    popa                     # Pops edi,esi,ebp...
+    addl $8, %esp    # Cleans up the pushed error code and pushed ISR number
+    sti
+    iret           # pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
 
 ISR_NOERRCODE 0
 ISR_NOERRCODE 1

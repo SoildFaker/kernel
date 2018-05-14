@@ -1,5 +1,5 @@
-#ifndef __MM__
-#define __MM__
+#ifndef MM_H
+#define MM_H
 
 #include "common.h"
 #include "page.h"
@@ -13,19 +13,19 @@
 #define PAGE_STACK_SIZE (MEMORY_SIZE/PAGE_SIZE)
 
 struct mmap_entry {
-  u32 base_low;
-  u32 base_high;
-  u32 length_low;
-  u32 length_high;
-  u32 type;
+    u32 base_low;
+    u32 base_high;
+    u32 length_low;
+    u32 length_high;
+    u32 type;
 }__attribute__((packed));
 typedef struct mmap_entry mmap_entry_t;
 
 struct memory_header {
-  struct memory_header *next;
-  struct memory_header *prev;
-  u32 allocated :1;
-  u32 length    :31;
+    struct memory_header *next;
+    struct memory_header *prev;
+    u32 allocated :1;
+    u32 length    :31;
 };
 typedef struct memory_header memory_header_t;
 
@@ -38,8 +38,6 @@ extern u8 kernel_end_pos[];
 
 // memoey page count
 extern u32 phy_page_count;
-extern mmap_entry_t *mmap;
-extern u32 *count;
 
 void init_page_stack();
 void page_free(u32 p);

@@ -1,5 +1,5 @@
-#ifndef __PAGING__
-#define __PAGING__
+#ifndef PAGE_H
+#define PAGE_H
 
 #include "common.h"
 #include "init.h"
@@ -29,9 +29,9 @@
 #define OFFSET_INDEX(x) ((x) & 0xFFF)
 
 struct page_entry {
-  u32 flags  : 9;  // page flags
-  u32 avail  : 3;  // available for system
-  u32 base   : 20; // base address
+    u32 flags  : 9;  // page flags
+    u32 avail  : 3;  // available for system
+    u32 base   : 20; // base address
 };
 typedef struct page_entry page_entry_t;
 //typedef u32 page_entry_t;

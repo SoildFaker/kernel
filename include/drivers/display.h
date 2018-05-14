@@ -1,5 +1,5 @@
-#ifndef DISPLAY_H
-#define DISPLAY_H
+#ifndef DRIVERS_DISPLAY_H
+#define DRIVERS_DISPLAY_H
 
 #include "common.h"
 

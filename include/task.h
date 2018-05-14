@@ -1,9 +1,9 @@
-#ifndef __TASK__
-#define __TASK__
+#ifndef TASK_H
+#define TASK_H
 
 #include "common.h"
-#include "page.h"
 #include "drivers/tty.h"
+#include "page.h"
 
 #define PROC_SIZE 4096
 #define TASK_BLOCKED 0x1
@@ -11,39 +11,39 @@
 enum task_state { UNUSED, NEW, EMBRYO, SLEEPING, RUNNABLE, ZOMBIE };
 
 struct task_context {
- 	u32 eip;
- 	u32 esp;
-	u32 ebp;
-	u32 ebx;
-	u32 ecx;
-	u32 edx;
-	u32 esi;
-	u32 edi;
-	u32 eflags;
+    u32 eip;
+    u32 esp;
+    u32 ebp;
+    u32 ebx;
+    u32 ecx;
+    u32 edx;
+    u32 esi;
+    u32 edi;
+    u32 eflags;
 }__attribute__((packed));
 
 struct mm_struct {
-  page_entry_t *pdt_task; // taskess's pdt
+    page_entry_t *pdt_task; // taskess's pdt
 };
 
 struct task_struct {
-  u32 pid;
-  u32 time_slice;
-  u32 flags;
-  u8 priority;
-  void *kernel_stack;
-  void *user_stack;
-  enum task_state state;
-  struct mm_struct *mm;         // task memory space
-  struct tty *tty;
-  struct task_context *context;      // switch() here to run taskess
-  struct trap_frame *frame;
-  struct task_struct *parent;
+    u32 pid;
+    u32 time_slice;
+    u32 flags;
+    u8 priority;
+    void *kernel_stack;
+    void *user_stack;
+    enum task_state state;
+    struct mm_struct *mm;         // task memory space
+    struct tty *tty;
+    struct task_context *context;      // switch() here to run taskess
+    struct trap_frame *frame;
+    struct task_struct *parent;
 };
 
 struct task_list {
-  struct task_struct *task;
-  struct task_list *next;
+    struct task_struct *task;
+    struct task_list *next;
 };
 
 // schedulable taskess list
