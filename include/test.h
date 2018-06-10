@@ -48,6 +48,7 @@ u32 test_d(__UNUSED__ void *args)
     a = fork();
     if (a == 0){
         print_str("child running ...\n");
+        exec(fs_root, "sh.elf");
     } else {
         print_hex(a);
         print_str("\nparent running ...\n");

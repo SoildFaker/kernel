@@ -1,8 +1,7 @@
 #include "elf.h"
 #include "drivers/hd.h"
 
-    void *
-disk_read_elf(struct elf_header *header, u32 header_offset)
+void * disk_read_elf(struct elf_header *header, u32 header_offset)
 {
     struct elf_section_header *ph, *eph;
     u8 *pa;

@@ -8,6 +8,8 @@
 #include "task.h"
 #include "init.h"
 #include "vfs.h"
+#include "elf.h"
+#include "string.h"
 
 typedef int (*sysc_func) (struct trap_frame *r);
 
@@ -19,6 +21,13 @@ int fork()
 {
     int a;
     asm volatile("int $0x80" : "=a" (a) : "0" (1));
+    return a;
+}
+
+int exec(struct fs_node *fs_root, const char *file)
+{
+    int a;
+    asm volatile("int $0x80" : "=a" (a) : "0" (3), "b"(file), "c"(fs_root));
     return a;
 }
 
@@ -41,12 +50,18 @@ static int sys_exec(struct trap_frame *frame)
     int i = 0;
     struct fs_node *fs_root = (struct fs_node *)(frame->ecx);
     struct dirent *node = 0;
+    void (*entry)(void);
     while ( (node = readdir_fs(fs_root, i)) != 0)
     {
         struct fs_node *fsnode = finddir_fs(fs_root, node->name);
         if ((fsnode->flags & 0x7) == FS_FILE){
-            char buf[256];
-            read_fs(fsnode, 0, 256, (u8 *)buf);
+            if (!strcmp(fsnode->name, (const char *)(frame->ebx))){
+                printk("%s", node->name);
+                elf_header_t header;
+                read_fs(fsnode, 0, sizeof(elf_header_t), (u8 *)&header);
+                entry = (void(*)(void))disk_read_elf(&header, fsnode->length);
+                entry();
+            }
         }
         i++;
     }
