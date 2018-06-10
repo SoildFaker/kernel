@@ -7,7 +7,7 @@ INCLUDE = -I./include
 DISKIMG = ./80m.img
 OUTDIR = bin
 
-EXCLUDE = -not -path "./boot/*" -not -path "./tools/*"
+EXCLUDE = -not -path "./boot/*" -not -path "./tools/*" -not -path "./user/*"
 KNL_CSRC = $(shell find . -name "*.c" $(EXCLUDE))
 KNL_SSRC = $(shell find . -name "*.s" $(EXCLUDE))
 
@@ -17,6 +17,7 @@ KNL_SOBJ = $(patsubst %.s, %.o, $(KNL_SSRC))
 
 KNL_LD = tools/kernel_link.ld
 BTL_LD = tools/loader_link.ld
+USR_LD = tools/user_link.ld
 
 GCFLAGS = -c -g -Os -m32 -ffreestanding -Wall -Werror -fno-pie
 GCFLAGS += $(INCLUDE) -fno-stack-protector
@@ -28,7 +29,11 @@ BTL_LDFLAGS = -static -nostdlib --nmagic --oformat=binary -melf_i386
 BTL_OBJ = ./boot/loaderasm.o ./boot/loadermain.o ./drivers/hd.o 
 BTL_OBJ += ./kernel/string.o ./kernel/elf.o
 
-all:clean $(OUTDIR)/boot.bin $(OUTDIR)/loader.bin $(OUTDIR)/kernel.elf dd test
+all:$(OUTDIR)/boot.bin $(OUTDIR)/loader.bin $(OUTDIR)/kernel.elf sh dd test
+
+sh:
+	$(CC) $(GCFLAGS) -c ./user/sh.c -o ./user/sh.o &\
+	$(LD) -T$(USR_LD) $(KNL_LDFLAGS) ./user/sh.o -o $(OUTDIR)/sh.elf
 
 clean:
 	rm -rf $(OUTDIR)/*
@@ -63,7 +68,7 @@ $(KNL_SOBJ): %.o: %.s
 	$(AS) $(ASFLAGS) $< -o $@
 
 dd:
-	./mkfs_kernel bin/loader.bin loader.bin bin/kernel.elf kernel.elf ./README.md README &\
+	./mkfs_kernel bin/loader.bin loader.bin bin/kernel.elf kernel.elf bin/sh.elf sh.elf &\
 	dd if=./$(OUTDIR)/boot.bin of=$(DISKIMG) obs=512 count=1 conv=notrunc
 	dd if=./$(OUTDIR)/loader.bin of=$(DISKIMG) obs=512 seek=1 conv=notrunc
 	dd if=./kernel.img of=$(DISKIMG) obs=512 seek=10 conv=notrunc
