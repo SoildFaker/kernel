@@ -1,8 +1,8 @@
-#include "init.h"
-#include "drivers/keyboard.h"
-#include "tools.h"
-#include "drivers/tty.h"
 #include "common.h"
+#include "drivers/keyboard.h"
+#include "drivers/tty.h"
+#include "init.h"
+#include "tools.h"
 
 static struct keymap us_keymap = {
     //normal keys
