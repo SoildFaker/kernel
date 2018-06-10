@@ -14,7 +14,7 @@ static void free_chunk(memory_header_t *chunk);
 static void split_chunk(memory_header_t *chunk, u32 len);
 static void glue_chunk(memory_header_t *chunk);
 
-static u32 heap_max = HEAP_START;
+static u32 heap_top = HEAP_START;
 static u32 page_stack[PAGE_STACK_SIZE];
 static u32 page_stack_top = 0;
 
@@ -33,9 +33,7 @@ void init_page_stack()
             u32 length = (map_entry+i)->base_low + (map_entry+i)-> length_low;
 
             while (page_addr < length && page_addr <= MEMORY_SIZE) {
-                if (page_addr < (u32)kernel_start_pos || 
-                        page_addr > (u32)kernel_end_pos + 0x1000)
-                {
+                if (page_addr < (u32)kernel_start_pos || page_addr > (u32)kernel_end_pos + 0x1000) {
                     page_free(page_addr);
                 }
                 page_addr += PAGE_SIZE;
@@ -111,10 +109,10 @@ void alloc_chunk(u32 start, u32 len)
 {
     // 如果当前堆的位置已经到达界限则申请内存页
     // 必须循环申请内存页直到有到足够的可用内存
-    while (start + len > heap_max) {
+    while (start + len > heap_top) {
         u32 page = page_alloc();
-        map(pdt_kernel, heap_max, page, PG_PRESENT | PG_WRITE);
-        heap_max += PAGE_SIZE;
+        map(pdt_kernel, heap_top, page, PG_PRESENT | PG_WRITE);
+        heap_top += PAGE_SIZE;
     }
 }
 
@@ -127,11 +125,11 @@ void free_chunk(memory_header_t *chunk)
     }
 
     // 空闲的内存超过 1 页的话就释放掉
-    while ((heap_max - PAGE_SIZE) >= (u32)chunk) {
-        heap_max -= PAGE_SIZE;
+    while ((heap_top - PAGE_SIZE) >= (u32)chunk) {
+        heap_top -= PAGE_SIZE;
         u32 page;
-        get_mapping(pdt_kernel, heap_max, &page);
-        unmap(pdt_kernel, heap_max);
+        get_mapping(pdt_kernel, heap_top, &page);
+        unmap(pdt_kernel, heap_top);
         page_free(page);
     }
 }
@@ -153,7 +151,7 @@ void split_chunk(memory_header_t *chunk, u32 len)
 
 void glue_chunk(memory_header_t *chunk)
 {
-    // 如果该内存块前面有链内存块且未被使用则拼合
+    // glue next & prev unused chunk
     if (chunk->next && chunk->next->allocated == 0) {
         chunk->length = chunk->length + chunk->next->length;
         if (chunk->next->next) {
@@ -170,8 +168,7 @@ void glue_chunk(memory_header_t *chunk)
         }
         chunk = chunk->prev;
     }
-
-    // 假如该内存后面没有链表内存块了直接释放掉
+    // if no chunk after current then release
     if (chunk->next == 0) {
         free_chunk(chunk);
     }

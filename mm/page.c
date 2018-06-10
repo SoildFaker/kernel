@@ -12,21 +12,34 @@ page_entry_t __attribute__((aligned(PAGE_SIZE)))
 static page_entry_t __attribute__((aligned(PAGE_SIZE)))
     pet_kernel[KPDT_COUNT][PAGE_TABLE_SIZE];
 
-    // Initilizing kernel page directory table
-    // Mapping kernel space start at 0xC0000000
+static page_entry_t __attribute__((aligned(PAGE_SIZE)))
+    pet_user[48][PAGE_TABLE_SIZE];
+// Initilizing kernel page directory table
+// Mapping kernel space start at 0xC0000000
 void init_page()
 {
     u32 i,j;
     u32 kpdt_start = PDT_INDEX(PAGE_OFFSET);
+    // kernel page direcroty
     for (i=kpdt_start, j=0; i < (kpdt_start + KPDT_COUNT); i++, j++) {
         pdt_kernel[i].base = ((u32)&pet_kernel[j] - PAGE_OFFSET) >> 12;
         pdt_kernel[i].flags = PG_WRITE | PG_PRESENT | PG_USER;
     }
-
-    page_entry_t *pet = *pet_kernel;
+    page_entry_t *kpet = *pet_kernel;
     for (i=0; i < KPDT_SIZE; i++) {
-        pet[i].base = i;
-        pet[i].flags = PG_WRITE | PG_PRESENT | PG_USER;
+        kpet[i].base = i;
+        kpet[i].flags = PG_WRITE | PG_PRESENT | PG_USER;
+    }
+
+    // user page direcroty
+    for (i=0, j=0; i < 48; i++, j++) {
+        pdt_kernel[i].base = ((u32)&pet_user[j] - PAGE_OFFSET) >> 12;
+        pdt_kernel[i].flags = PG_WRITE | PG_PRESENT | PG_USER;
+    }
+    page_entry_t *upet = *pet_user;
+    for (i=0; i < 48; i++) {
+        upet[i].base = i;
+        upet[i].flags = PG_WRITE | PG_PRESENT | PG_USER;
     }
 
     // Registered page fault handler
