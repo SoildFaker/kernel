@@ -84,7 +84,7 @@ struct fs_node *init_vfs()
     header = (struct myfs_struct *)(first_sector);
 
     if (header->magic != MYFS_MAGIC){
-        ERROR("RAMDISK INIT FAILED!");
+        ERROR("DISK INIT FAILED!");
     }
 
     entries = (struct myfs_entry *)((u32)first_sector + sizeof(struct myfs_struct));
